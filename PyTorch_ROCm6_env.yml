@@ -1,0 +1,4 @@
+name: /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+channels:
+  - conda-forge
+prefix: /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
