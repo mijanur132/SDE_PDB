@@ -35,10 +35,12 @@ def get_config():
   # data
   data = config.data
   data.dataset = 'fastmri_knee'
-  data.root = '/media/harry/tomo/fastmri'
+  data.root = '/lustre/orion/stf218/proj-shared/brave/brave_database/fastMRI/singlecoil_train'
   data.image_size = 320
   data.is_multi = False
-  data.is_complex = False
+  data.is_complex = True
+  data.magpha=False
+  data.num_channels=2
 
   # model
   model = config.model

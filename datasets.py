@@ -207,7 +207,7 @@ class fastmri_knee(Dataset):
   """ Simple pytorch dataset for fastmri knee singlecoil dataset """
   def __init__(self, root, is_complex=False):
     self.root = root
-    self.data_list = list(root.glob('*/*.npy'))
+    self.data_list = list(root.glob('*.npy'))
     self.is_complex = is_complex
 
   def __len__(self):
@@ -227,7 +227,7 @@ class fastmri_knee_infer(Dataset):
   """ Simple pytorch dataset for fastmri knee singlecoil dataset """
   def __init__(self, root, sort=True, is_complex=False):
     self.root = root
-    self.data_list = list(root.glob('*/*.npy'))
+    self.data_list = list(root.glob('*.npy'))
     self.is_complex = is_complex
     if sort:
       self.data_list = sorted(self.data_list)
@@ -287,11 +287,19 @@ def create_dataloader(configs, evaluation=False, sort=True):
       train_dataset = fastmri_knee_magpha(Path(configs.data.root) / f'knee_complex_magpha_{configs.data.image_size}_train')
       val_dataset = fastmri_knee_magpha_infer(Path(configs.data.root) / f'knee_complex_magpha_{configs.data.image_size}_val')
     else:
-      train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_train', is_complex=True)
-      val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_val', is_complex=True)
+      # train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_train', is_complex=True)
+      # val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_val', is_complex=True)
+      train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train', is_complex=True)
+      val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', is_complex=True)
+
   else:
-    train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_{configs.data.image_size}_train')
-    val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_{configs.data.image_size}_val', sort=sort)
+    x=Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train'
+    print(x)
+    train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train')
+    
+    y=Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val'
+    print(y)
+    val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', sort=sort)
 
   train_loader = DataLoader(
     dataset=train_dataset,

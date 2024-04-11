@@ -35,7 +35,7 @@ flags.mark_flags_as_required(["workdir", "config", "mode"])
 
 
 def main(argv):
-  print(FLAGS.config)
+  #print(FLAGS.config)
   if FLAGS.mode == "train" or FLAGS.mode == "train_regression":
     # Create the working directory
     tf.io.gfile.makedirs(FLAGS.workdir)

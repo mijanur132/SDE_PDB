@@ -26,21 +26,22 @@ import tensorflow as tf
 import tensorflow_gan as tfgan
 import logging
 # Keep the import below for registering all model definitions
-from models import ddpm, ncsnv2, ncsnpp, unet
+from models import ncsnpp
 import losses
 import sampling
 from models import utils as mutils
 from models.ema import ExponentialMovingAverage
 import datasets
 import evaluation
-import likelihood
+#import likelihood
 import sde_lib
 from absl import flags
 import torch
 from torch import nn
 from torch.utils import tensorboard
 from torchvision.utils import make_grid, save_image
-from utils import save_checkpoint, restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
+#from utils import save_checkpoint, restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
+from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
 
 FLAGS = flags.FLAGS
 
@@ -62,7 +63,42 @@ def train(config, workdir):
   tf.io.gfile.makedirs(tb_dir)
   writer = tensorboard.SummaryWriter(tb_dir)
 
+
+
+# Check if GPU is available
+  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+  if device.type == 'cuda':
+      print("GPU is available")
+  else:
+      print("GPU is not available, using CPU")
+
+  # Define the size of the matrices
+  N = 1000  # Size of the square matrices
+
+  # Generate random matrices
+  if device.type == 'cuda':
+      A = torch.randn(N, N).cuda()  # Random matrix A on GPU
+      B = torch.randn(N, N).cuda()  # Random matrix B on GPU
+  else:
+      A = torch.randn(N, N)  # Random matrix A on CPU
+      B = torch.randn(N, N)  # Random matrix B on CPU
+
+  # Perform matrix multiplication
+  C = torch.matmul(A, B)
+
+  # Check GPU usage
+  if device.type == 'cuda':
+      print(torch.cuda.memory_allocated(device))  # Print memory allocated on GPU
+      print(torch.cuda.memory_reserved(device))  # Print memory reserved on GPU
+
+  # Print the result
+  print(C)
+
+########
+
   # Initialize model.
+
   score_model = mutils.create_model(config)
   ema = ExponentialMovingAverage(score_model.parameters(), decay=config.model.ema_rate)
   optimizer = losses.get_optimizer(config, score_model.parameters())
@@ -74,12 +110,16 @@ def train(config, workdir):
   tf.io.gfile.makedirs(checkpoint_dir)
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
-  state = restore_checkpoint(checkpoint_meta_dir, state, config.device)
+  #state = restore_checkpoint(checkpoint_meta_dir, state, config.device)
   initial_step = int(state['step'])
 
   # Build pytorch dataloader for training
   train_dl, eval_dl = datasets.create_dataloader(config)
   num_data = len(train_dl.dataset)
+
+  #print(train_dl.dataset.data_list), gives the names of all numpy arrays in the train data folder
+
+  
 
   # Create data normalizer and its inverse
   scaler = datasets.get_data_scaler(config)
@@ -125,10 +165,24 @@ def train(config, workdir):
     print('=================================================')
 
     for step, batch in enumerate(train_dl, start=1):
+      batch=batch.to(config.device)
+      real=torch.real(batch)
+      img=torch.imag(batch)
+      batch=torch.stack([real,img],dim=-1)
+#      batch=batch[:,None]
+      print(batch.shape)
       batch = scaler(batch.to(config.device))
+      batch=torch.transpose(batch,1,2)
+
+     # our data comes in : [1, 1, 44, 320, 320]
+
       # (b, 1, 320, 320, 2) --> (b, 2, 320, 320)
-      # batch = kspace_to_nchw(torch.view_as_real(batch))
+      #batch = kspace_to_nchw(torch.view_as_real(batch))
+      print(batch.shape)
+      batch = kspace_to_nchw(batch[0])
       # Execute one training step
+    
+
       loss = train_step_fn(state, batch)
       if step % config.training.log_freq == 0:
         logging.info("step: %d, training_loss: %.5e" % (step, loss.item()))
