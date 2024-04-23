@@ -40,8 +40,12 @@ import torch
 from torch import nn
 from torch.utils import tensorboard
 from torchvision.utils import make_grid, save_image
-#from utils import save_checkpoint, restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
+from utils import save_checkpoint, restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
 from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
+
+#torch.backends.cudnn.benchmark = True
+#torch.backends.cudnn.enabled = False
+
 
 FLAGS = flags.FLAGS
 
@@ -65,6 +69,7 @@ def train(config, workdir):
 
 
 
+
 # Check if GPU is available
   device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -73,36 +78,13 @@ def train(config, workdir):
   else:
       print("GPU is not available, using CPU")
 
-  # Define the size of the matrices
-  N = 1000  # Size of the square matrices
-
-  # Generate random matrices
-  if device.type == 'cuda':
-      A = torch.randn(N, N).cuda()  # Random matrix A on GPU
-      B = torch.randn(N, N).cuda()  # Random matrix B on GPU
-  else:
-      A = torch.randn(N, N)  # Random matrix A on CPU
-      B = torch.randn(N, N)  # Random matrix B on CPU
-
-  # Perform matrix multiplication
-  C = torch.matmul(A, B)
-
-  # Check GPU usage
-  if device.type == 'cuda':
-      print(torch.cuda.memory_allocated(device))  # Print memory allocated on GPU
-      print(torch.cuda.memory_reserved(device))  # Print memory reserved on GPU
-
-  # Print the result
-  print(C)
-
-########
 
   # Initialize model.
 
   score_model = mutils.create_model(config)
   ema = ExponentialMovingAverage(score_model.parameters(), decay=config.model.ema_rate)
   optimizer = losses.get_optimizer(config, score_model.parameters())
-  state = dict(optimizer=optimizer, model=score_model, ema=ema, step=0)
+  state = dict(optimizer=optimizer, model=score_model, ema=ema, step=0, epoch=0)
 
   # Create checkpoints directory
   checkpoint_dir = os.path.join(workdir, "checkpoints")
@@ -110,8 +92,12 @@ def train(config, workdir):
   tf.io.gfile.makedirs(checkpoint_dir)
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
-  #state = restore_checkpoint(checkpoint_meta_dir, state, config.device)
+
+  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_120_1.pth")
+  state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
   initial_step = int(state['step'])
+  initial_epoch = int(state['epoch'])
+  print(initial_epoch)
 
   # Build pytorch dataloader for training
   train_dl, eval_dl = datasets.create_dataloader(config)
@@ -157,20 +143,23 @@ def train(config, workdir):
     sampling_fn = sampling.get_sampling_fn(config, sde, sampling_shape, inverse_scaler, sampling_eps)
 
   # In case there are multiple hosts (e.g., TPU pods), only log to host 0
-  logging.info("Starting training loop at step %d." % (initial_step,))
+  logging.info("Starting training loop at step %d." % (initial_epoch,))
 
-  for epoch in range(1, config.training.epochs):
+  for epoch in range(initial_epoch, config.training.epochs):
     print('=================================================')
     print(f'Epoch: {epoch}')
     print('=================================================')
 
     for step, batch in enumerate(train_dl, start=1):
+      batch = torch.split(batch, split_size_or_sections=4, dim=2)[0]
+
+      #print(batch.shape)
       batch=batch.to(config.device)
       real=torch.real(batch)
       img=torch.imag(batch)
       batch=torch.stack([real,img],dim=-1)
 #      batch=batch[:,None]
-      print(batch.shape)
+  
       batch = scaler(batch.to(config.device))
       batch=torch.transpose(batch,1,2)
 
@@ -178,31 +167,41 @@ def train(config, workdir):
 
       # (b, 1, 320, 320, 2) --> (b, 2, 320, 320)
       #batch = kspace_to_nchw(torch.view_as_real(batch))
-      print(batch.shape)
+      #print(batch.shape)
       batch = kspace_to_nchw(batch[0])
-      # Execute one training step
-    
 
+      # Execute one training step
+
+    
       loss = train_step_fn(state, batch)
+
+
       if step % config.training.log_freq == 0:
-        logging.info("step: %d, training_loss: %.5e" % (step, loss.item()))
+        logging.info("epoch: %d, step: %d, training_loss: %.5e" % (epoch,step, loss.item()))
         global_step = num_data * epoch + step
         writer.add_scalar("training_loss", scalar_value=loss, global_step=global_step)
-      if step != 0 and step % config.training.snapshot_freq_for_preemption == 0:
-        save_checkpoint(checkpoint_meta_dir, state)
-      # Report the loss on an evaluation dataset periodically
+
+      # if step != 0 and step % config.training.snapshot_freq_for_preemption == 0:
+      #   state['epoch']=epoch
+        #save_checkpoint(checkpoint_meta_dir, state)
+
+      #Report the loss on an evaluation dataset periodically
       # if step % config.training.eval_freq == 0:
       #   eval_batch = scaler(next(iter(eval_dl)).to(config.device))
       #   eval_loss = eval_step_fn(state, eval_batch)
-      #   logging.info("step: %d, eval_loss: %.5e" % (step, eval_loss.item()))
+      #   logging.info("epoch:%d, step: %d, eval_loss: %.5e" % (epoch,step, eval_loss.item()))
       #   global_step = num_data * epoch + step
       #   writer.add_scalar("eval_loss", scalar_value=eval_loss.item(), global_step=global_step)
 
-    # Save a checkpoint for every epoch
-    save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
+    # Save a checkpoint for every 10 epoch
+                  
+
+    if epoch>1 and epoch%10==0:
+      state['epoch']=epoch
+      save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
 
     # Generate and save samples for every epoch
-    if config.training.snapshot_sampling:
+    if config.training.snapshot_sampling and epoch>1 and epoch%10==0:
       ema.store(score_model.parameters())
       ema.copy_to(score_model.parameters())
       sample, n = sampling_fn(score_model)

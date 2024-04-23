@@ -5,7 +5,7 @@ import numpy as np
 from fastmri_utils import fft2c_new, ifft2c_new
 from statistics import mean, stdev
 from sigpy.mri import poisson
-
+import os
 
 """
 Helper functions for new types of inverse problems
@@ -254,13 +254,22 @@ def get_data_inverse_scaler(config):
 
 
 def restore_checkpoint(ckpt_dir, state, device, skip_sigma=False):
-  loaded_state = torch.load(ckpt_dir, map_location=device)
-  loaded_model_state = loaded_state['model']
+  if not os.path.exists(ckpt_dir):
+      print(f"Checkpoint file {ckpt_dir} does not exist.")
+      return state
+  
+  checkpt = torch.load(ckpt_dir, map_location=device)
+ 
   if skip_sigma:
-    loaded_model_state.pop('module.sigmas')
-
-  state['model'].load_state_dict(loaded_model_state, strict=False)
-  state['ema'].load_state_dict(loaded_state['ema'])
-  state['step'] = loaded_state['step']
+    checkpt['model'].state_dict().pop('module.sigmas')
+  
+  state['model'].load_state_dict(checkpt['model'].state_dict(), strict=False)
+  #state['optimizer'].load_state_dict(checkpt['optimizer'])
+  state['ema'].load_state_dict(checkpt['ema'].state_dict())
+  state['step'] = checkpt['step']
+  state['epoch'] = checkpt['epoch']
   print(f'loaded checkpoint dir from {ckpt_dir}')
   return state
+
+def save_checkpoint(ckpt_dir, state):
+  torch.save(state,ckpt_dir)

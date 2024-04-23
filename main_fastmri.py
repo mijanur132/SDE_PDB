@@ -23,6 +23,11 @@ import logging
 import os
 import tensorflow as tf
 
+# ##
+# import pdb_attach
+# pdb_attach.listen(50000)
+# ###
+
 FLAGS = flags.FLAGS
 
 config_flags.DEFINE_config_file(
@@ -35,7 +40,7 @@ flags.mark_flags_as_required(["workdir", "config", "mode"])
 
 
 def main(argv):
-  #print(FLAGS.config)
+  print(FLAGS.config)
   if FLAGS.mode == "train" or FLAGS.mode == "train_regression":
     # Create the working directory
     tf.io.gfile.makedirs(FLAGS.workdir)
@@ -50,6 +55,7 @@ def main(argv):
     logger.setLevel('INFO')
     # Run the training pipeline
     if FLAGS.mode == "train":
+      print("train..")
       run_lib_fastmri.train(FLAGS.config, FLAGS.workdir)
     elif FLAGS.mode == "train_regression":
       run_lib_fastmri.train_regression(FLAGS.config, FLAGS.workdir)

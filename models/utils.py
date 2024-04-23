@@ -89,42 +89,7 @@ def create_model(config):
   """Create the score model."""
   model_name = config.model.name
   score_model = get_model(model_name)(config)
-###
 
-
-# Check if GPU is available
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-  if device.type == 'cuda':
-      print("GPU is available")
-  else:
-      print("GPU is not available, using CPU")
-
-  # Define the size of the matrices
-  N = 1000  # Size of the square matrices
-
-  # Generate random matrices
-  if device.type == 'cuda':
-      A = torch.randn(N, N).cuda()  # Random matrix A on GPU
-      B = torch.randn(N, N).cuda()  # Random matrix B on GPU
-  else:
-      A = torch.randn(N, N)  # Random matrix A on CPU
-      B = torch.randn(N, N)  # Random matrix B on CPU
-
-  # Perform matrix multiplication
-  C = torch.matmul(A, B)
-
-  # Check GPU usage
-  if device.type == 'cuda':
-      print(torch.cuda.memory_allocated(device))  # Print memory allocated on GPU
-      print(torch.cuda.memory_reserved(device))  # Print memory reserved on GPU
-
-  # Print the result
-  print(C)
-
-
-
-###
   score_model = score_model.to(config.device)
   
   return score_model

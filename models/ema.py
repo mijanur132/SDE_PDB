@@ -93,6 +93,7 @@ class ExponentialMovingAverage:
                 shadow_params=self.shadow_params)
 
   def load_state_dict(self, state_dict):
+ 
     self.decay = state_dict['decay']
     self.num_updates = state_dict['num_updates']
     self.shadow_params = state_dict['shadow_params']
