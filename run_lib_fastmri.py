@@ -45,6 +45,7 @@ from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squa
 
 FLAGS = flags.FLAGS
 
+torch.cuda.empty_cache()
 
 def train(config, workdir):
   """Runs the training pipeline.
@@ -64,38 +65,6 @@ def train(config, workdir):
   writer = tensorboard.SummaryWriter(tb_dir)
 
 
-
-# Check if GPU is available
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-  if device.type == 'cuda':
-      print("GPU is available")
-  else:
-      print("GPU is not available, using CPU")
-
-  # Define the size of the matrices
-  N = 1000  # Size of the square matrices
-
-  # Generate random matrices
-  if device.type == 'cuda':
-      A = torch.randn(N, N).cuda()  # Random matrix A on GPU
-      B = torch.randn(N, N).cuda()  # Random matrix B on GPU
-  else:
-      A = torch.randn(N, N)  # Random matrix A on CPU
-      B = torch.randn(N, N)  # Random matrix B on CPU
-
-  # Perform matrix multiplication
-  C = torch.matmul(A, B)
-
-  # Check GPU usage
-  if device.type == 'cuda':
-      print(torch.cuda.memory_allocated(device))  # Print memory allocated on GPU
-      print(torch.cuda.memory_reserved(device))  # Print memory reserved on GPU
-
-  # Print the result
-  print(C)
-
-########
 
   # Initialize model.
 
@@ -164,6 +133,7 @@ def train(config, workdir):
     print(f'Epoch: {epoch}')
     print('=================================================')
 
+
     for step, batch in enumerate(train_dl, start=1):
       batch=batch.to(config.device)
       real=torch.real(batch)
@@ -182,6 +152,7 @@ def train(config, workdir):
       batch = kspace_to_nchw(batch[0])
       # Execute one training step
     
+
 
       loss = train_step_fn(state, batch)
       if step % config.training.log_freq == 0:

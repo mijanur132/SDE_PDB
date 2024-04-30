@@ -1,21 +1,43 @@
 import os
+import sys
 
 import torch
 from torch.nn import functional as F
 from torch.autograd import Function
 from torch.utils.cpp_extension import load
 
+print("Full Python Version:", sys.version)
+print("Python interpreter path:", sys.executable)
 
 module_path = os.path.dirname(__file__)
-if torch.cuda.is_available():
-    upfirdn2d_op = load(
-        "upfirdn2d",
-        sources=[
-            os.path.join(module_path, "upfirdn2d.cpp"),
-            os.path.join(module_path, "upfirdn2d_kernel.cu"),
-        ],
-    )
+# if torch.cuda.is_available():
+#     upfirdn2d_op = load(
+#         "upfirdn2d",
+#         sources=[
+#             os.path.join(module_path, "upfirdn2d.cpp"),
+#             os.path.join(module_path, "upfirdn2d_kernel.cu"),
 
+#         ],
+#     )
+
+if torch.cuda.is_available():
+    try:
+        # Dynamically compile and load the upfirdn2d CUDA extension
+        upfirdn2d_op = load(
+            "upfirdn2d",
+            sources=[
+                os.path.join(module_path, "upfirdn2d.cpp"),
+                os.path.join(module_path, "upfirdn2d_kernel.cu"),
+            ],
+            verbose=True  # Enable verbose output to help with debugging
+        )
+        print("Successfully loaded the upfirdn2d CUDA extension.", upfirdn2d_op)
+    except Exception as e:
+        print(f"Failed to load the upfirdn2d CUDA extension: {e}")
+else:
+    print("CUDA is not available. Cannot load the upfirdn2d CUDA extension.")
+
+#os.path.join(module_path, "upfirdn2d_kernel.cu"), #palash
 
 class UpFirDn2dBackward(Function):
     @staticmethod
@@ -115,10 +137,13 @@ class UpFirDn2d(Function):
         g_pad_y1 = in_h * up_y - out_h * down_y + pad_y0 - up_y + 1
 
         ctx.g_pad = (g_pad_x0, g_pad_x1, g_pad_y0, g_pad_y1)
-
+        #torch.save(input, 'tensor.pt')
+        #torch.save(kernel, 'kernel.pt')
+        #print(up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0, pad_y1)
         out = upfirdn2d_op.upfirdn2d(
             input, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0, pad_y1
         )
+        
         # out = out.view(major, out_h, out_w, minor)
         out = out.view(-1, channel, out_h, out_w)
 
