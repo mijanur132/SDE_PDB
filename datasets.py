@@ -288,7 +288,8 @@ def create_dataloader(configs, evaluation=False, sort=True):
       val_dataset = fastmri_knee_magpha_infer(Path(configs.data.root) / f'knee_complex_magpha_{configs.data.image_size}_val')
     else:
       # train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_train', is_complex=True)
-      # val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_val', is_complex=True)
+      # val_dataset = 
+      mri_knee_infer(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_val', is_complex=True)
       train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train', is_complex=True)
       val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', is_complex=True)
 

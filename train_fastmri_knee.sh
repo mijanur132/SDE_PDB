@@ -2,8 +2,8 @@
 
 
 
-# export http_proxy=http://proxy.ccs.ornl.gov:3128/
-# export https_proxy=https://proxy.ccs.ornl.gov:3128/
+export http_proxy=http://proxy.ccs.ornl.gov:3128/
+export https_proxy=https://proxy.ccs.ornl.gov:3128/
 # export OMP_NUM_THREADS=2
 
 # export TORCH_HOME=$PWD/cache

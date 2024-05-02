@@ -151,28 +151,30 @@ def train(config, workdir):
     print('=================================================')
 
     for step, batch in enumerate(train_dl, start=1):
-      batch = torch.split(batch, split_size_or_sections=4, dim=2)[0]
+#       batch = torch.split(batch, split_size_or_sections=4, dim=2)[0]
 
-      #print(batch.shape)
-      batch=batch.to(config.device)
-      real=torch.real(batch)
-      img=torch.imag(batch)
-      batch=torch.stack([real,img],dim=-1)
-#      batch=batch[:,None]
+#       #print(batch.shape)
+#       batch=batch.to(config.device)
+#       real=torch.real(batch)
+#       img=torch.imag(batch)
+#       batch=torch.stack([real,img],dim=-1)
+# #      batch=batch[:,None]
   
       batch = scaler(batch.to(config.device))
-      batch=torch.transpose(batch,1,2)
+      #print(batch.shape)
+      batch=batch.squeeze(0)
+      batch=torch.transpose(batch,0,1)
 
      # our data comes in : [1, 1, 44, 320, 320]
 
       # (b, 1, 320, 320, 2) --> (b, 2, 320, 320)
       #batch = kspace_to_nchw(torch.view_as_real(batch))
       #print(batch.shape)
-      batch = kspace_to_nchw(batch[0])
+      # batch = kspace_to_nchw(batch[0])
 
       # Execute one training step
-
-    
+      batch=batch[:1]
+      #print(batch.shape)
       loss = train_step_fn(state, batch)
 
 

@@ -38,9 +38,9 @@ def get_config():
   data.root ='/raid/xrv/singlecoil_train'
   data.image_size = 320
   data.is_multi = False
-  data.is_complex = True
+  data.is_complex = False
   data.magpha=False
-  data.num_channels=2
+  #data.num_channels=2
 
   # model
   model = config.model
