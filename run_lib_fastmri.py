@@ -43,14 +43,23 @@ from torchvision.utils import make_grid, save_image
 from utils import save_checkpoint, restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
 from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
 
-#torch.backends.cudnn.benchmark = True
-#torch.backends.cudnn.enabled = False
-
+import torch.distributed as dist 
+from torch.utils.data import DataLoader as DL
+from torch.utils.data import DistributedSampler as DS
+from torch.nn.parallel import DistributedDataParallel as DDP
+import torch.multiprocessing as mp
+import argparse
 
 FLAGS = flags.FLAGS
 
+def init_distributed(rank,ws):
+  dist.init_process_group(backend="nccl", rank=rank, world_size=ws)
+  torch.cuda.set_device(rank)
 
-def train(config, workdir):
+
+  #************************************************************
+
+def train( rank, world_size, config, workdir):
   """Runs the training pipeline.
 
   Args:
@@ -68,10 +77,12 @@ def train(config, workdir):
   writer = tensorboard.SummaryWriter(tb_dir)
 
 
+  init_distributed(rank,world_size)
+  device= torch.device('cuda', rank)
 
 
 # Check if GPU is available
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+ # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
   if device.type == 'cuda':
       print("GPU is available")
@@ -81,7 +92,9 @@ def train(config, workdir):
 
   # Initialize model.
 
-  score_model = mutils.create_model(config)
+  score_model = mutils.create_model(config).to(device)
+  score_model=DDP(score_model, device_ids=[rank])
+
   ema = ExponentialMovingAverage(score_model.parameters(), decay=config.model.ema_rate)
   optimizer = losses.get_optimizer(config, score_model.parameters())
   state = dict(optimizer=optimizer, model=score_model, ema=ema, step=0, epoch=0)
@@ -93,15 +106,17 @@ def train(config, workdir):
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
 
-  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_120_1.pth")
+  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_390.pth")
   state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
-  print(initial_epoch)
+  # print(initial_epoch)
 
   # Build pytorch dataloader for training
-  train_dl, eval_dl = datasets.create_dataloader(config)
-  num_data = len(train_dl.dataset)
+  train_loader, eval_loader= datasets.create_dataloader_ddp(config,rank,world_size)
+
+  num_data = len(train_loader.dataset)
+  print(num_data)
 
   #print(train_dl.dataset.data_list), gives the names of all numpy arrays in the train data folder
 
@@ -146,39 +161,26 @@ def train(config, workdir):
   logging.info("Starting training loop at step %d." % (initial_epoch,))
 
   for epoch in range(initial_epoch, config.training.epochs):
+    train_loader.sampler.set_epoch(epoch)
     print('=================================================')
     print(f'Epoch: {epoch}')
     print('=================================================')
 
-    for step, batch in enumerate(train_dl, start=1):
-#       batch = torch.split(batch, split_size_or_sections=4, dim=2)[0]
-
-#       #print(batch.shape)
-#       batch=batch.to(config.device)
-#       real=torch.real(batch)
-#       img=torch.imag(batch)
-#       batch=torch.stack([real,img],dim=-1)
-# #      batch=batch[:,None]
-  
-      batch = scaler(batch.to(config.device))
-      #print(batch.shape)
+    for step, batch in enumerate(train_loader, start=1):
+     
+      batch = scaler(batch.to(device))
       batch=batch.squeeze(0)
       batch=torch.transpose(batch,0,1)
-
-     # our data comes in : [1, 1, 44, 320, 320]
-
-      # (b, 1, 320, 320, 2) --> (b, 2, 320, 320)
-      #batch = kspace_to_nchw(torch.view_as_real(batch))
       #print(batch.shape)
-      # batch = kspace_to_nchw(batch[0])
-
-      # Execute one training step
-      batch=batch[:1]
-      #print(batch.shape)
-      loss = train_step_fn(state, batch)
+      images=torch.unbind(batch,dim=0)
+      images = [img.unsqueeze(0) for img in images]
 
 
-      if step % config.training.log_freq == 0:
+      for img in images:
+        loss = train_step_fn(state, img)
+
+
+      if step % config.training.log_freq == 0 and rank==0:
         logging.info("epoch: %d, step: %d, training_loss: %.5e" % (epoch,step, loss.item()))
         global_step = num_data * epoch + step
         writer.add_scalar("training_loss", scalar_value=loss, global_step=global_step)
@@ -198,12 +200,12 @@ def train(config, workdir):
     # Save a checkpoint for every 10 epoch
                   
 
-    if epoch>1 and epoch%10==0:
+    if (epoch>1 and epoch%10==0) and rank==0:
       state['epoch']=epoch
       save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
 
     # Generate and save samples for every epoch
-    if config.training.snapshot_sampling and epoch>1 and epoch%10==0:
+    if (config.training.snapshot_sampling and epoch>1) and (epoch%10 ==0 and rank==0):
       ema.store(score_model.parameters())
       ema.copy_to(score_model.parameters())
       sample, n = sampling_fn(score_model)
@@ -547,3 +549,7 @@ def evaluate(config,
         io_buffer = io.BytesIO()
         np.savez_compressed(io_buffer, IS=inception_score, fid=fid, kid=kid)
         f.write(io_buffer.getvalue())
+
+
+
+    

@@ -22,7 +22,7 @@ from ml_collections.config_flags import config_flags
 import logging
 import os
 import tensorflow as tf
-
+import torch.multiprocessing as mp
 # ##
 # import pdb_attach
 # pdb_attach.listen(50000)
@@ -38,8 +38,18 @@ flags.DEFINE_string("eval_folder", "eval",
                     "The folder name for storing evaluation results")
 flags.mark_flags_as_required(["workdir", "config", "mode"])
 
+def train_wrapper(rank, world_size, config, workdir):
+  run_lib_fastmri.train(rank, world_size, config, workdir)
 
 def main(argv):
+  visible_devices = os.getenv('CUDA_VISIBLE_DEVICES')
+  if visible_devices is None:
+      raise ValueError("No GPUs specified in CUDA_VISIBLE_DEVICES")
+  
+  gpus = list(map(int, visible_devices.split(',')))
+  gpus = list(map(int, visible_devices.split(',')))
+  world_size = len(gpus)
+
   print(FLAGS.config)
   if FLAGS.mode == "train" or FLAGS.mode == "train_regression":
     # Create the working directory
@@ -54,9 +64,13 @@ def main(argv):
     logger.addHandler(handler)
     logger.setLevel('INFO')
     # Run the training pipeline
+    
     if FLAGS.mode == "train":
+     
       print("train..")
-      run_lib_fastmri.train(FLAGS.config, FLAGS.workdir)
+      mp.spawn(train_wrapper, args=(world_size, FLAGS.config, FLAGS.workdir), nprocs=world_size, join=True)
+
+
     elif FLAGS.mode == "train_regression":
       run_lib_fastmri.train_regression(FLAGS.config, FLAGS.workdir)
   elif FLAGS.mode == "eval":
