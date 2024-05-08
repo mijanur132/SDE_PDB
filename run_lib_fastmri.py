@@ -51,6 +51,7 @@ import torch.multiprocessing as mp
 import argparse
 
 FLAGS = flags.FLAGS
+logger = logging.getLogger() 
 
 def init_distributed(rank,ws):
   dist.init_process_group(backend="nccl", rank=rank, world_size=ws)
@@ -107,7 +108,7 @@ def train( rank, world_size, config, workdir):
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
 
-  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_30.pth")
+  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_9.pth")
   state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
@@ -212,14 +213,8 @@ def train( rank, world_size, config, workdir):
       #   writer.add_scalar("eval_loss", scalar_value=eval_loss.item(), global_step=global_step)
 
     # Save a checkpoint for every 10 epoch
-                  
-
-    if (epoch>1 and epoch%3==0) and rank==0:
-      state['epoch']=epoch
-      save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
-
-    # Generate and save samples for every epoch
-    if (config.training.snapshot_sampling and epoch>1) and (epoch%10 ==0 and rank==0):
+         # Generate and save samples for every epoch
+    if (config.training.snapshot_sampling and epoch>1) and (epoch%3 ==0 and rank==0):
       ema.store(score_model.parameters())
       ema.copy_to(score_model.parameters())
       sample, n = sampling_fn(score_model)
@@ -237,7 +232,13 @@ def train( rank, world_size, config, workdir):
 
       with tf.io.gfile.GFile(
           os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
-        save_image(image_grid, fout)
+        save_image(image_grid, fout)            
+
+    if (epoch>1 and epoch%5==0) and rank==0:
+      state['epoch']=epoch
+      save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
+
+ 
 
 
 def train_regression(config, workdir):
