@@ -100,13 +100,14 @@ def train( rank, world_size, config, workdir):
   state = dict(optimizer=optimizer, model=score_model, ema=ema, step=0, epoch=0)
 
   # Create checkpoints directory
+  print(workdir)
   checkpoint_dir = os.path.join(workdir, "checkpoints")
   checkpoint_meta_dir = os.path.join(workdir, "checkpoints-meta", "checkpoint.pth")
   tf.io.gfile.makedirs(checkpoint_dir)
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
 
-  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_390.pth")
+  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_30.pth")
   state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
@@ -167,17 +168,30 @@ def train( rank, world_size, config, workdir):
     print('=================================================')
 
     for step, batch in enumerate(train_loader, start=1):
-     
+      
+      #print(batch.shape)
       batch = scaler(batch.to(device))
-      batch=batch.squeeze(0)
+      #batch=batch.squeeze(0)
       batch=torch.transpose(batch,0,1)
       #print(batch.shape)
       images=torch.unbind(batch,dim=0)
       images = [img.unsqueeze(0) for img in images]
 
+      #print(len(images))
+      for i in range(0, len(images)-5, 5):
+          # This will fetch up to 50 images, handling cases where less than 50 images remain
+          batch_images = images[i:i+5]
 
-      for img in images:
-        loss = train_step_fn(state, img)
+          # Scale and prepare the batch
+          scaled_images = [img * 3500 for img in batch_images]
+
+          # Concatenate all the images in the batch along the batch dimension (dim=0)
+          imgs = torch.cat(scaled_images, dim=0)
+
+          # Print the shape of the first image and the concatenated batch
+          #print(batch_images[0].shape, imgs.shape)
+
+          loss = train_step_fn(state, imgs)
 
 
       if step % config.training.log_freq == 0 and rank==0:
@@ -200,7 +214,7 @@ def train( rank, world_size, config, workdir):
     # Save a checkpoint for every 10 epoch
                   
 
-    if (epoch>1 and epoch%10==0) and rank==0:
+    if (epoch>1 and epoch%3==0) and rank==0:
       state['epoch']=epoch
       save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
 

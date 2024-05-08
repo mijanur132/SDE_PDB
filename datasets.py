@@ -20,6 +20,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
+import torch
 
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -320,6 +321,24 @@ def create_dataloader(configs, evaluation=False, sort=True):
   )
   return train_loader, val_loader
 
+
+def custom_collate_fn(batch):
+    # Initialize a list to hold the processed tensors
+    processed_tensors = []
+
+    for x in batch:  # Each element in the batch is now just a tensor, not a tuple
+        # Remove the first 5 and last 5 channels from each tensor
+        x_tensor = torch.from_numpy(x)
+        trimmed_tensor = x_tensor[:, 5:-5, :, :]  # This slices out the first and last 5 channels
+
+        # Store the processed tensor
+        processed_tensors.append(trimmed_tensor)
+    
+    # Concatenate all the trimmed tensors along the channel dimension
+    concatenated_tensor = torch.cat(processed_tensors, dim=1)
+
+    return concatenated_tensor
+
 def create_dataloader_ddp(configs, rank,world_size, evaluation=False, sort=True):
   shuffle = True if not evaluation else False
   if configs.data.is_multi:
@@ -353,6 +372,7 @@ def create_dataloader_ddp(configs, rank,world_size, evaluation=False, sort=True)
     dataset=train_dataset,
     batch_size=configs.training.batch_size,
     sampler=train_sampler,
+    collate_fn=custom_collate_fn,
     drop_last=True,
     num_workers=1,
     pin_memory=True
@@ -360,6 +380,7 @@ def create_dataloader_ddp(configs, rank,world_size, evaluation=False, sort=True)
   val_loader = DataLoader(
     dataset=val_dataset,
     batch_size=configs.training.batch_size,
+    collate_fn=custom_collate_fn,
     sampler=val_sampler,
     drop_last=True,
     num_workers=1,
