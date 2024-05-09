@@ -271,5 +271,54 @@ def restore_checkpoint(ckpt_dir, state, device, skip_sigma=False):
   print(f'loaded checkpoint dir from {ckpt_dir}')
   return state
 
+
+def restore_checkpoint_disto_2_no_dist(ckpt_dir, state, device, skip_sigma=False):
+
+
+  if not os.path.exists(ckpt_dir):
+      print(f"Checkpoint file {ckpt_dir} does not exist.")
+      return state
+  
+  # Load the checkpoint directly into the specified device
+  loaded_state = torch.load(ckpt_dir, map_location=device)
+  
+  # Adjust the model state dictionary to remove 'module.' prefixes if it was trained with DDP
+  if 'model' in loaded_state and isinstance(loaded_state['model'], dict):
+      new_model_state = {key.replace('module.', ''): value for key, value in loaded_state['model'].items()}
+      state['model'].load_state_dict(new_model_state, strict=False)
+  else:
+      print("No 'model' key found in the checkpoint or 'model' is not a dictionary.")
+
+  # If the optimizer state is part of the checkpoint, also adjust it
+  if 'optimizer' in loaded_state and isinstance(loaded_state['optimizer'], dict):
+      new_optimizer_state = {key.replace('module.', ''): value for key, value in loaded_state['optimizer'].items()}
+      state['optimizer'].load_state_dict(new_optimizer_state)
+
+  # Handle the EMA state dictionary similarly if it exists
+  if 'ema' in loaded_state and isinstance(loaded_state['ema'], dict):
+      new_ema_state = {key.replace('module.', ''): value for key, value in loaded_state['ema'].items()}
+      state['ema'].load_state_dict(new_ema_state, strict=False)
+  
+  # Optionally skip sigma and adjust directly if needed
+  if skip_sigma and 'sigmas' in state['model']:
+      state['model'].pop('sigmas')
+
+  # Update the step count and epoch if they are part of the checkpoint
+  if 'step' in loaded_state:
+      state['step'] = loaded_state['step']
+  if 'epoch' in loaded_state:
+      state['epoch'] = loaded_state['epoch']
+
+  # Save the full state after adjustments for non-DDP use
+  cleaned_ckpt_dir = ckpt_dir.replace('.pth', '_non_ddp.pth')
+  torch.save(state, cleaned_ckpt_dir)
+  print(f"Checkpoint for non-DDP use saved at {cleaned_ckpt_dir}")
+
+  return state
+
+
+
+
+
 def save_checkpoint(ckpt_dir, state):
   torch.save(state,ckpt_dir)

@@ -40,7 +40,7 @@ import torch
 from torch import nn
 from torch.utils import tensorboard
 from torchvision.utils import make_grid, save_image
-from utils import save_checkpoint, restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
+from utils import save_checkpoint, restore_checkpoint, restore_checkpoint_disto_2_no_dist, get_mask, kspace_to_nchw, root_sum_of_squares
 from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
 
 import torch.distributed as dist 
@@ -108,8 +108,9 @@ def train( rank, world_size, config, workdir):
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
 
-  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_30.pth")
-  state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_75.pth")
+  state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
+  #state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
   # print(initial_epoch)
