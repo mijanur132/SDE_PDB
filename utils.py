@@ -271,6 +271,22 @@ def restore_checkpoint(ckpt_dir, state, device, skip_sigma=False):
   print(f'loaded checkpoint dir from {ckpt_dir}')
   return state
 
+def save_checkpoint_for_non_ddp(model, optimizer, ema, step, epoch, save_path):
+    model_state = model.module.state_dict() if isinstance(model, torch.nn.parallel.DistributedDataParallel) else model.state_dict()
+    optimizer_state = optimizer.state_dict()
+    ema_state = ema.state_dict() if hasattr(ema, 'state_dict') else {}
+
+    checkpoint = {
+        'model': model_state,
+        'optimizer': optimizer_state,
+        'ema': ema_state,
+        'step': step,
+        'epoch': epoch
+    }
+
+    torch.save(checkpoint, save_path)
+    print(f"Checkpoint saved for non-DDP use at {save_path}")
+
 
 def restore_checkpoint_disto_2_no_dist(ckpt_dir, state, device, skip_sigma=False):
 
@@ -310,8 +326,10 @@ def restore_checkpoint_disto_2_no_dist(ckpt_dir, state, device, skip_sigma=False
       state['epoch'] = loaded_state['epoch']
 
   # Save the full state after adjustments for non-DDP use
+  for key, value in state.items():
+    print(f"Key: {key}, Type: {type(value)}")
   cleaned_ckpt_dir = ckpt_dir.replace('.pth', '_non_ddp.pth')
-  torch.save(state, cleaned_ckpt_dir)
+  save_checkpoint_for_non_ddp(state['model'], state['optimizer'], state['ema'], state['step'], state['epoch'], cleaned_ckpt_dir)
   print(f"Checkpoint for non-DDP use saved at {cleaned_ckpt_dir}")
 
   return state
