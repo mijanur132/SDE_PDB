@@ -108,7 +108,7 @@ def train( rank, world_size, config, workdir):
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
 
-  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_9.pth")
+  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_30.pth")
   state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
