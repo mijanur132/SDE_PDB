@@ -11,7 +11,7 @@ def moving_average(data, window_size):
 
 
 # Path to your TensorBoard log file directory
-log_file_dir = '/home/xrv/score-mri-palash/workdir/B/tensorboard/'
+log_file_dir = '/home/xrv/score-mri-palash/workdir/D/tensorboard/'
 plot_save_path = os.path.join(log_file_dir, 'training_loss_vs_steps.png')
 
 # Initialize an Event Accumulator with the path
@@ -42,7 +42,7 @@ if 'training_loss' in ea.Tags()['scalars']:
     plt.plot(range(window_size - 1, len(losses)), losses_ma, label='Moving Average', linestyle='-', color='r')
     plt.xlabel('Index')
     plt.ylabel('Training Loss')
-    plt.ylim(2000, 10000)
+    #plt.ylim(2000, 10000)
     plt.title('Training Loss with Moving Average')
     plt.legend()
     plt.grid(True)

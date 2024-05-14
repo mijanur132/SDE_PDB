@@ -109,8 +109,8 @@ def train( rank, world_size, config, workdir):
   # Resume training when intermediate checkpoints are detected
 
   checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_75.pth")
-  state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
-  #state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+  #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
+  state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
   # print(initial_epoch)
@@ -180,9 +180,10 @@ def train( rank, world_size, config, workdir):
       images = [img.unsqueeze(0) for img in images]
 
       #print(len(images))
-      for i in range(0, len(images)-5, 5):
+      nimg=4
+      for i in range(0, len(images)-1*nimg, nimg):
           # This will fetch up to 50 images, handling cases where less than 50 images remain
-          batch_images = images[i:i+5]
+          batch_images = images[i:i+nimg]
 
           # Scale and prepare the batch
           scaled_images = [img * 3500 for img in batch_images]
