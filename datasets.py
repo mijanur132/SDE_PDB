@@ -353,7 +353,16 @@ def create_dataloader_ddp(configs, rank,world_size, evaluation=False, sort=True)
       # val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_val', is_complex=True)
       train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train', is_complex=True)
       val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', is_complex=True)
-
+  elif configs.data.khadiza:
+    x=Path(configs.data.root)
+    print(x)
+    train_dataset = fastmri_knee(x)
+    
+    y=Path(configs.data.root)
+    print(y)
+    val_dataset = fastmri_knee_infer(x, sort=sort)
+  
+    
   else:
     x=Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train'
     print(x)

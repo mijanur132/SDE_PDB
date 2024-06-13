@@ -33,9 +33,11 @@ def get_config():
   sampling.corrector = 'langevin'
 
   # data
+
   data = config.data
+  data.khadiza=True
   data.dataset = 'fastmri_knee'
-  data.root ='/raid/xrv/singlecoil_train'
+  data.root ='/raid/xrv/khadiza/10-20knpy/processed/'
   data.image_size = 320
   data.is_multi = False
   data.is_complex = False

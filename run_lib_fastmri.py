@@ -90,7 +90,8 @@ def train( rank, world_size, config, workdir):
   else:
       print("GPU is not available, using CPU")
 
-
+ 
+ 
   # Initialize model.
 
   score_model = mutils.create_model(config).to(device)
@@ -173,6 +174,8 @@ def train( rank, world_size, config, workdir):
       
       #print(batch.shape)
       batch = scaler(batch.to(device))
+      batch=batch.real
+      batch=batch.float()
       #batch=batch.squeeze(0)
       batch=torch.transpose(batch,0,1)
       #print(batch.shape)
