@@ -1,4 +1,5 @@
 import os
+import sys
 
 import torch
 from torch import nn
@@ -6,17 +7,25 @@ from torch.nn import functional as F
 from torch.autograd import Function
 from torch.utils.cpp_extension import load
 
+print(os.getpid())
+print("Full Python Version:", sys.version)
 
 module_path = os.path.dirname(__file__)
+
+
+print("Module path:", module_path)
+sources_list = [
+    os.path.join(module_path, "fused_bias_act.cpp"),
+    os.path.join(module_path, "fused_bias_act_kernel.cu"),
+]
+
+print("Sources:", sources_list)
 if torch.cuda.is_available():
     fused = load(
         "fused",
-        sources=[
-            os.path.join(module_path, "fused_bias_act.cpp"),
-            os.path.join(module_path, "fused_bias_act_kernel.cu"),
-        ],
+        sources=sources_list
     )
-
+#os.path.join(module_path, "fused_bias_act_kernel.cu"),
 
 class FusedLeakyReLUFunctionBackward(Function):
     @staticmethod

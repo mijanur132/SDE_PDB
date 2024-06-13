@@ -1,14 +1,16 @@
 #!/bin/bash
-
+#!/ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd/bin/python
 
 
 export http_proxy=http://proxy.ccs.ornl.gov:3128/
 export https_proxy=https://proxy.ccs.ornl.gov:3128/
 # export OMP_NUM_THREADS=2
 
-# export TORCH_HOME=$PWD/cache
+export TORCH_HOME=$PWD/cache
 module load miniforge3
-source activate  /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+source /autofs/nccs-svm1_sw/frontier/python/3.10/miniforge3/23.11.0/etc/profile.d/conda.sh
+
+conda activate /ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd
 
 
 export LD_PRELOAD="/usr/lib64/libcrypto.so /usr/lib64/libssh.so.4 /usr/lib64/libssl.so.1.1"
@@ -20,9 +22,11 @@ module load PrgEnv-gnu
 module load gcc/11.2.0
 module load amd-mixed/6.0.0
 module load craype-accel-amd-gfx90a
-# module load ninja
+module load ninja
 
 export ROCM_HOME=/opt/rocm-6.0.0
+#export PATH=/opt/rocm-6.0.0/bin
+#export ROCM_HOME=/opt/rocm-5.6.0
 
 export NCCL_DEBUG=INFO
 export FI_CXI_ATS=0
@@ -31,7 +35,7 @@ export LD_LIBRARY_PATH=/opt/rocm-6.0.0/include/rccl/build:$PWD/aws-ofi-rccl/src/
 export FI_LOG_LEVEL=info
 export NCCL_NET_GDR_LEVEL=3
 
-export PATH="/ccs/home/palashmr/.local/crusher/miniforge3/23.11.0/bin:$PATH"
+#export PATH="/ccs/home/palashmr/.local/crusher/miniforge3/23.11.0/bin:$PATH"
 
 
 

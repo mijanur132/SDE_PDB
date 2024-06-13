@@ -28,6 +28,16 @@ import torch.multiprocessing as mp
 # pdb_attach.listen(50000)
 # ###
 
+
+
+# ########
+# import pdb_attach
+# pdb_attach.listen(50000)  # Listen on port 50000.
+
+# ####
+
+
+
 FLAGS = flags.FLAGS
 
 config_flags.DEFINE_config_file(

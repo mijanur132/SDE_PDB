@@ -1,0 +1,1000 @@
+   56  ls
+   57  rm -rf knee_320_train_kspace_numpy/
+   58  ls
+   59  mkdir esc_knee_320_train
+   60  python h5toNpy.py ./singlecoil_train/knee_320_train/  ./singlecoil_train/esc_knee_320_train/
+   61  cd ..
+   62  python h5toNpy.py ./singlecoil_train/knee_320_train/  ./singlecoil_train/esc_knee_320_train/
+   63  ls
+   64  tar -xvf goLS5.tar.xz 
+   65  ls
+   66  rm  goLS5.tar.xz 
+   67  rm fastMRI_brain_DICOM/
+   68  rm -r fastMRI_brain_DICOM/
+   69  rm  krxBE.tar.xz
+   70  ls
+   71  tar -xvf ijlpI.tar.xz 
+   72  tar -xvf COSW1.tar.xz 
+   73  ls singlecoil_train/
+   74  ls singlecoil_train/knee_320_train/
+   75  rm  singlecoil_train/file100*
+   76  ls
+   77  ls singlecoil_train/
+   78  rm  COSW1.tar.xz 
+   79  ls
+   80  tar -xvf wIQU4.tar.xz 
+   81  ls
+   82  rm wIQU4.tar.xz
+   83  LS
+   84  ls
+   85  cd singlecoil_train/
+   86  ls
+   87  curl -C - "https://fastmri-dataset.s3.amazonaws.com/v2.0/knee_singlecoil_val.tar.xz?AWSAccessKeyId=AKIAJM2LEZ67Y2JL3KRA&Signature=K4navv%2BS6KwoqhtN%2FDM4kxy2OEA%3D&Expires=1715542219" --output knee_singlecoil_val.tar.xz
+   88  ls
+   89  tar -xvf knee_singlecoil_val.tar.xz 
+   90  ls
+   91  rm knee_singlecoil_val.tar.xz
+   92  ls
+   93  python h5toNpy.py ./singlecoil_train/singlecoil_val  ./singlecoil_train/esc_knee_320_val/
+   94  mkdir esc_knee_320_val
+   95  ls
+   96  cd ..
+   97  python h5toNpy.py ./singlecoil_train/singlecoil_val  ./singlecoil_train/esc_knee_320_val/
+   98  ls
+   99  cd singlecoil_train/
+  100  ls
+  101  ls esc_knee_320_val/
+  102  pwd
+  103  cd singlecoil_val/
+  104  ls
+  105  cd ..
+  106  ls
+  107  ls esc_knee_320_train/
+  108  ls esc_knee_320_val/
+  109  ls esc_knee_320_train/pwd
+  110  pwd
+  111  cd esc_knee_320_train/
+  112  python 
+  113  pwd
+  114  cd ../knee_320_train/
+  115  ls
+  116  python h5reader.py singlecoil_train/file1000001.h5 
+  117  python h5reader.py singlecoil_train/knee_320_train/file1000001.h5 
+  118  pwd
+  119  python h5reader.py singlecoil_train/knee_320_train/file1000001.h5
+  120  cd ..
+  121  ls
+  122  cd ..
+  123  ls
+  124  python h5reader.py singlecoil_train/knee_320_train/file1000001.h5
+  125  vim h5reader.py 
+  126  python
+  127  conda env list
+  128  conda activate  /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
+  129  conda list | grep rocminfo
+  130  rocminfo
+  131  amd-smi
+  132  rocmsmi
+  133  rocminfo
+  134  rocm-info
+  135  readeontop
+  136  radeontop
+  137  cnf radeontop
+  138  where rocm
+  139  which rocm
+  140  ls /opt
+  141  ls /opt/rocm-5.6.0/
+  142  /opt/rocm-5.6.0/bin/rocminfo
+  143  sbatch run_scoremri.slurm 
+  144  /opt/rocm-5.6.0/bin/rocm-smi
+  145  squeue -u palashmr
+  146  sbatch run_scoremri.slurm 
+  147  squeue -u palashmr
+  148  scancel 461362
+  149  python
+  150  pushd /opt/
+  151  ls
+  152  pwd
+  153  ls
+  154  pwd
+  155  pushd  /lustre/orion/stf218/proj-shared/brave/score-MRI
+  156  ls
+  157  bash train_fastmri_knee.sh 
+  158  conda env list
+  159  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri
+  160  pip3 install --upgrade pip wheel
+  161  wget https://repo.radeon.com/rocm/manylinux/rocm-rel-6.0.2/torch-2.1.2+rocm6.0-cp310-cp310-linux_x86_64.whl
+  162  wget https://repo.radeon.com/rocm/manylinux/rocm-rel-6.0.2/torchvision-0.16.1+rocm6.0-cp310-cp310-linux_x86_64.whl
+  163  pip3 install --force-reinstall torch-2.1.2+rocm6.0-cp310-cp310-linux_x86_64.whl torchvision-0.16.1+rocm6.0-cp310-cp310-linux_x86_64.whl
+  164  conda list | grep python
+  165  conda install python=3.10
+  166  conda update -n base -c conda-forge conda
+  167  conda install python=3.10
+  168  rm /ccs/home/palashmr/.conda/pkgs/tensorflow-base-2.11.0-cpu_py310hc9b7e7f_0.conda
+  169  conda install python=3.10
+  170  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0 
+  171  conda list |grep rocm
+  172  conda update all
+  173  conda update -all
+  174  conda update --all
+  175  rm /ccs/home/palashmr/.conda/pkgs/mkl-2024.1.0-ha957f24_691.conda
+  176  /ccs/home/palashmr/.conda/pkgs/gettext-0.22.5-h59595ed_2.conda
+  177  rm /ccs/home/palashmr/.conda/pkgs/gettext-0.22.5-h59595ed_2.conda
+  178  conda update --all
+  179  ls
+  180  dirs -v
+  181  pushd +2
+  182  ls
+  183  rm brain_multicoil_train_batch_0.tar.xz
+  184  rm prostate_test_DIFFUSION_1.tar.gz
+  185  ls
+  186  dirs -v
+  187  pushd +2
+  188  conda update --all
+  189  pushd ccs/home/palashmr
+  190  pushd ccs/home/palashmr/
+  191  pushd /ccs/home/palashmr/
+  192  ls
+  193  ls cache/
+  194  ls .cache/
+  195  cd .cache/
+  196  rm -r *
+  197  ls
+  198  dirs -v
+  199  p +1
+  200  pushd +1
+  201  conda update --all
+  202  conda list |grep rocm
+  203  pwd
+  204  bash train_fastmri_knee.sh 
+  205  conda install python=3.10
+  206  bash train_fastmri_knee.sh 
+  207  conda list |grep rocm
+  208  conda list 
+  209  conda list |grep torch
+  210  conda list |grep python
+  211  wget https://repo.radeon.com/rocm/manylinux/rocm-rel-6.0.2/torch-2.1.2+rocm6.0-cp310-cp310-linux_x86_64.whl
+  212  wget https://repo.radeon.com/rocm/manylinux/rocm-rel-6.0.2/torchvision-0.16.1+rocm6.0-cp310-cp310-linux_x86_64.whl
+  213  pip3 install --force-reinstall torch-2.1.2+rocm6.0-cp310-cp310-linux_x86_64.whl torchvision-0.16.1+rocm6.0-cp310-cp310-linux_x86_64.whl
+  214  conda list |grep rocm
+  215  bash train_fastmri_knee.sh 
+  216  pip install tensorflow
+  217  bash train_fastmri_knee.sh 
+  218  pip3 show tensorflow
+  219  conda install -c conda-forge tensorflow
+  220  conda list env
+  221  conda env list
+  222  bash train_fastmri_knee.sh 
+  223  python3 -m pip install tensorflow
+  224  bash train_fastmri_knee.sh 
+  225  python
+  226  pip show tensorflow
+  227  which python
+  228  conda list | grep python
+  229  conda remove tensorflow
+  230  conda env list
+  231  pip -V
+  232  which python
+  233  python -m pip install tensorflow
+  234  python
+  235  which python
+  236  conda list | grep tensorflow
+  237  conda list | grep tensorflow.python
+  238  pip -V
+  239  which python
+  240  ls /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/lib/python3.10/site-packages/pip
+  241  pip install --upgrade --force-reinstall protobuf
+  242  conda update --all
+  243  pip -V
+  244  which python 
+  245  python
+  246  pip install --upgrade tensorflow
+  247  python; import tensorflow as tf
+  248  pip install --upgrade --force-reinstall tensorflow
+  249  python 
+  250  which python
+  251  python --version
+  252  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/bin/python /usr/bin/python[version] -m pip install --user tensorflow-rocm==3.10 --upgrade
+  253  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/bin/python  -m pip install --user tensorflow-rocm==3.10 --upgrade
+  254  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/bin/python  -m pip install --user tensorflow-rocm==2.12.1.570 --upgrade
+  255  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/bin/python  -m pip install protobuf=3.19.0
+  256  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/bin/python  -m pip install protobuf==3.19.0
+  257  ls ./.local/lib/
+  258  python3 -c 'import tensorflow' 2> /dev/null && echo 'Success' || echo 'Failure'
+  259  python3 --version
+  260  bash train_fastmri_knee.sh 
+  261  pip install --upgrade --force-reinstall protobuf
+  262  bash train_fastmri_knee.sh 
+  263  pip install tensorflow-gan
+  264  bash train_fastmri_knee.sh 
+  265  conda list |grep tensorflow
+  266  python -c "import tensorflow as tf; print(tf.__version__)"
+  267  conda list | grep rocm
+  268  pip install --upgrade tensorflow
+  269  bash train_fastmri_knee.sh 
+  270  conda list | grep rocm
+  271  conda list | grep tensorflow
+  272  conda env list
+  273  bash train_fastmri_knee.sh 
+  274  tensorflow
+  275  python -c "import tensorflow as tf; print(tf.__version__)"
+  276  conda list
+  277  conda update --all
+  278  python -c "import tensorflow as tf; print(tf.__version__)"
+  279  python3 -c 'import torch' 2> /dev/null && echo 'Success' || echo 'Failure'
+  280  pip install tensorflow-rocm
+  281  python -c "import tensorflow as tf; print(tf.__version__)"
+  282  lsmod | grep amdgpu
+  283  pip3 install --user tensorflow-rocm --upgrade
+  284  conda deactivate
+  285  conda env list
+  286  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri
+  287  python -c "import tensorflow as tf; print(tf.__version__)"
+  288  conda list | grep rocm
+  289  conda list | grep tensorflow
+  290  python3 -c "import tensorflow as tf; print(tf.__version__)"
+  291  python -c "import tensorflow as tf; print(tf.__version__)"
+  292  export LD_PRELOAD="/usr/lib64/libcrypto.so /usr/lib64/libssh.so.4 /usr/lib64/libssl.so.1.1"
+  293  # module load PrgEnv-gnu
+  294  # module load gcc/11.2.0
+  295  # module load rocm/6.0.0
+  296  module load PrgEnv-gnu
+  297  module load gcc/11.2.0
+  298  module load amd-mixed/6.0.0
+  299  module load craype-accel-amd-gfx90a
+  300  export ROCM_HOME=/opt/rocm-6.0.0
+  301  export NCCL_DEBUG=INFO
+  302  export FI_CXI_ATS=0
+  303  #export LD_LIBRARY_PATH=/opt/rocm-5.6.0/rccl/build:$PWD/aws-ofi-rccl/src/.libs/:/opt/cray/libfabric/1.15.2.0/lib64/:/opt/rocm-5.6.0/lib:/opt/rocm-5.6.0/hip/lib
+  304  export LD_LIBRARY_PATH=/opt/rocm-6.0.0/include/rccl/build:$PWD/aws-ofi-rccl/src/.libs/:/opt/cray/libfabric/1.15.2.0/lib64/:/opt/rocm-6.0.0/lib
+  305  export FI_LOG_LEVEL=info
+  306  python -c "import tensorflow as tf; print(tf.__version__)"
+  307  pip uninstall tensorflow 
+  308  python -c "import tensorflow as tf; print(tf.__version__)"
+  309  bash train_fastmri_knee.sh 
+  310  conda list | grep tensorflow
+  311  conda deactivate
+  312  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri
+  313  python -c "import tensorflow as tf; print(tf.__version__)"
+  314  echo $PYTHONPATH
+  315  ls .local
+  316  ls ./local/lib
+  317  ls ~/.local/
+  318  ls ~/.local/lib/python3.10/site-packages/
+  319  rm -r  ~/.local/lib/python3.10/site-packages/tensorflow_rocm-2.12.1.570.dist-info/
+  320  rm -r  ~/.local/lib/python3.10/site-packages/tensorflow_rocm-2.14.0.600.dist-info/
+  321  ls
+  322  ls ~/.local/lib/python3.10/site-packages/
+  323  ls /usr/bin/p
+  324  which python
+  325  pwd
+  326  python -c "import tensorflow as tf; print(python.__version__)"
+  327  python -c "import sys; print(sys.version)"
+  328  python -c "import sys; print(sys.executable)"
+  329  conda deactivate 
+  330  python -c "import sys; print(sys.executable)"
+  331  python -c "import tensorflow as tf; print(tf.__version__)"
+  332  python -c "import sys; print(sys.executable)"
+  333  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri
+  334  python -c "import sys; print(sys.executable)"
+  335  ls /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/bin/python/
+  336  ls /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/bin/
+  337  pip cache purge
+  338  pip uninstall tensorflow
+  339  python -c "import tensorflow as tf; print(tf.__version__)"
+  340  python -c "import tensorflow as tf; print(tf.sysconfig.get_lib())"
+  341  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/tensorflow
+  342  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/
+  343  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/tensorflow
+  344  rm -r  /ccs/home/palashmr/.local/lib/python3.10/site-packages/tensorflow
+  345  python -c "import tensorflow as tf; print(tf.sysconfig.get_lib())"
+  346  python -c "import tensorflow as tf; print(tf.__version__)"
+  347  python -c "import tensorflow as tf; print(tf.sysconfig.get_lib())"
+  348  bash train_fastmri_knee.sh 
+  349  ls /usr/bin/python3
+  350  ls /usr/bin/python3.10
+  351  ls /usr/bin/python3.10.3
+  352  ls /usr/bin/
+  353  /usr/bin/python3.10 -m pip install --user tensorflow-rocm==2.16 --upgrade
+  354  pip
+  355  /usr/bin/python3.10 -m pip install --user tensorflow-rocm==2.16 --upgrade
+  356  /usr/bin/python3.10 -m ensurepip
+  357  /usr/bin/python3.10 -m pip install --user tensorflow-rocm==2.16 --upgrade
+  358  /usr/bin/python3.10 
+  359  pip
+  360  pip install tensorflow
+  361  python -c "import tensorflow as tf; print(tf.__version__)"
+  362  bash train_fastmri_knee.sh 
+  363  conda init
+  364  bash train_fastmri_knee.sh 
+  365  conda list tensorflow
+  366  pip install tensorflow-estimator==2.16.1
+  367  pip install tensorflow-estimator==2.15.0
+  368  pip install --index-url=https://pypi.org/simple/ --upgrade pip
+  369  pip install --upgrade pip 
+  370  pip install tensorflow-estimator==2.16.1
+  371  bash train_fastmri_knee.sh 
+  372  pip install tensorflow==2.15
+  373  bash train_fastmri_knee.sh 
+  374  python -c "import tensorflow_probability as tfp; print(tfp.__version__)
+  375  python -c "import tensorflow_probability as tfp; print(tfp.__version__)"
+  376  pip install tensorflow-probability==0.14.1
+  377  bash train_fastmri_knee.sh 
+  378  pip install tensorflow-probability==0.20
+  379  bash train_fastmri_knee.sh 
+  380  pip install tensorflow-probability==0.23
+  381  bash train_fastmri_knee.sh 
+  382  conda update --all
+  383  pip install keras
+  384  bash train_fastmri_knee.sh 
+  385  python -c "import keras; print(keras.__version__)"
+  386  conda list torch
+  387  conda list tensorflow
+  388  python -c "from tensorflow import keras; print(keras.__version__)"
+  389  python -c "from tensorflow import keras"
+  390  pip install tensorrt.
+  391  pip install tensorrt
+  392  python -c "from tensorflow import keras"
+  393  bash train_fastmri_knee.sh 
+  394  python -c "from tensorflow import keras"
+  395  conda list tensorrt
+  396  ls /ccs/home/palashmr/.local/lib/python3.10/
+  397  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/
+  398  ls /ccs/home/palashmr/.local/lib/python3.10/
+  399  ls /ccs/home/palashmr/.local/lib/
+  400  ls /ccs/home/palashmr/.local/
+  401  ls /ccs/home/palashmr/.local/lib/
+  402  ls /ccs/home/palashmr/.local/lib/python3.10/
+  403  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/
+  404  pwd
+  405  ls
+  406  ls /ccs/home/palashmr/.local/
+  407  ls /ccs/home/palashmr/.local/lib/python3.10/
+  408  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/
+  409  echo $PATH
+  410  pip show keras
+  411  python --version
+  412  ls /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/lib/python3.10/site-packages
+  413  export PYTHONPATH=/lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/lib/python3.10/site-packages:$PYTHONPATH
+  414  echo $PATH
+  415  echo $PYTHONPATH
+  416  bash train_fastmri_knee.sh 
+  417  import sys
+  418  sys.path.insert(0, "/lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/lib/python3.10/site-packages")
+  419  # Now you can import Keras
+  420  import keras
+  421  pip show keras
+  422  python -c "from tensorflow import keras"
+  423  ls /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri/lib/python3.10/site-packages
+  424  python -c "import sys; print(sys.path)"
+  425  python -c "import keras"
+  426  python -c "import tensorrt"
+  427  conda update --all
+  428  python -c "import tensorrt"
+  429  bash train_fastmri_knee.sh 
+  430  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/
+  431  pip install --user --target=/ccs/home/palashmr/.local/lib/python3.10/site-packages/ tensorrt
+  432  pip install --target=/ccs/home/palashmr/.local/lib/python3.10/site-packages/ tensorrt
+  433  pip install --target=/ccs/home/palashmr/.local/lib/python3.10/site-packages/ keras
+  434  ls /ccs/home/palashmr/.local/lib/python3.10/site-packages/
+  435  bash train_fastmri_knee.sh 
+  436  conda update --all
+  437  conda deactivate 
+  438  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri
+  439  bash train_fastmri_knee.sh 
+  440  python -c "import tensorrt"
+  441  conda list tensorflow
+  442  python -c "from tensorflow import keras as ks""
+  443  python -c "from tensorflow import keras as ks"
+  444  python -c "import tensorflow.keras as keras; print(keras.__version__)"
+  445  pip uninstall keras
+  446  python -c "import tensorflow.keras as keras; print(keras.__version__)"
+  447  bash train_fastmri_knee.sh 
+  448  python -c "import tensorflow; print(f"Tensor Flow Version: {tf.__version__}")
+  449  python -c "import tensorflow; print(f"Tensor Flow Version: {tf.__version__}")
+  450  python -c "import tensorflow.keras as keras; print(keras.__version__)"
+  451  conda list tensorflow
+  452  pip install tensorflow-gpu
+  453  conda list tensorflow
+  454  python -c "import tensorflow.keras as keras; print(keras.__version__)"
+  455  python -c "import tensorrt as tr; print(tr.__version__)"
+  456  find /usr/ -name libcudnn.so*
+  457  ls /usr
+  458  ls /usr/local/
+  459  ls /usr/local/lib64/
+  460  ls
+  461  ls /usr/local/lib64/
+  462  ls /usr/local/
+  463  ls /usr/local/lib
+  464  bash train_fastmri_knee.sh 
+  465  pip install tensorflow-probability==0.22
+  466  python -c "import tensorflow.keras as keras; print(keras.__version__)"
+  467  pip install tensorflow-keras
+  468  /usr/bin/python3 /autofs/nccs-svm1_home1/palashmr/.vscode-server/extensions/ms-python.python-2024.2.1/pythonFiles/printEnvVariablesToFile.py /autofs/nccs-svm1_home1/palashmr/.vscode-server/extensions/ms-python.python-2024.2.1/pythonFiles/deactivate/bash/envVars.txt
+  469  quota
+  470  exit
+  471  pushd /lustre/orion/stf218/proj-shared/brave/
+  472  ls
+  473  cd score-MRI/
+  474  module reset
+  475  module load amd-mixed/6.0.0
+  476  module load craype-accel-amd-gfx90a
+  477  module load miniforge3
+  478  conda env list
+  479  conda create -y -n PyTorch_ROCm6_env --prefix  /lustre/orion/stf218/proj-shared/brave/score-MRI
+  480  conda create -y -p  /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  481  source activate PyTorch_ROCm6_env
+  482  conda env list
+  483  source activate  /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  484  MPICC="cc -shared" pip3 install --no-cache-dir --no-binary=mpi4py mpi4py
+  485  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0 
+  486  pushd ~/.cache/
+  487  ls
+  488  rm -r *
+  489  pushd +1
+  490  pwd
+  491  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0 
+  492  pushd +1
+  493  pwd
+  494  ls
+  495  cd packages/
+  496  ls
+  497  cd miniconda/
+  498  ls
+  499  cd ..
+  500  ls
+  501  conda env list
+  502  conda deactivate
+  503  conda remove  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri --all
+  504  conda deactivate
+  505  conda remove  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri --all
+  506  conda env list
+  507  conda remove  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri 
+  508  conda remove  /lustre/orion/world-shared/stf218/palashmr/miniconda
+  509  conda env  remove  /lustre/orion/world-shared/stf218/palashmr/miniconda
+  510  conda env  remove -p  /lustre/orion/world-shared/stf218/palashmr/miniconda
+  511  conda env  remove -p  /lu -y -p lustre/orion/world-shared/stf218/palashmr/miniconda
+  512  conda env list
+  513  conda env  remove -y -p /lustre/orion/world-shared/stf218/palashmr/miniconda
+  514  conda env remove -p  /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri
+  515  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/score-mri
+  516  conda en vlist
+  517  conda env list
+  518  conda env  remove -y -p /lustre/orion/world-shared/stf218/palashmr/miniconda
+  519  conda env list
+  520  ls
+  521  pwd
+  522  ls
+  523  cd miniconda/
+  524  ls
+  525  cd ..
+  526  ls
+  527  cd ..
+  528  ls
+  529  ls cache/
+  530  cd cache/
+  531  rm -r *
+  532  cd ..
+  533  ls core
+  534  ls core/
+  535  ls
+  536  cd .cache/
+  537  rm -r*
+  538  rm -r *
+  539  ls
+  540  cd ..
+  541  cd .conda
+  542  ls
+  543  ls envs/
+  544  ls pkgs/
+  545  cd ..
+  546  ls
+  547  ls .
+  548  ls . *
+  549  ls
+  550  ls .
+  551  ls -lart
+  552  ls -lartb
+  553  ls -lartm
+  554  ls --help
+  555  ls -lartMB
+  556  du -sh */ | awk '{print $1/1024, "MB", $2}'
+  557  ls -lart
+  558  du -h -d 1 .condarc 
+  559  du -h -d 1 .ipynb_checkpoints/
+  560  du -h -d 1 .conda
+  561  hwoami
+  562  whoami
+  563  quota
+  564  quota -s
+  565  pwd
+  566  df
+  567  df .
+  568  quota -s
+  569  conda env list
+  570  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  571  pushd ~
+  572  cd .cache/
+  573  ls
+  574  rm -r *
+  575  dirs +1
+  576  pwd
+  577  pushd +1
+  578  ls
+  579  dirs -v
+  580  pushd /lustre/orion/stf218/proj-shared/brave/
+  581  cd score-MRI/
+  582  ls
+  583  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0 
+  584  MPICC="cc -shared" pip3 install --no-cache-dir --no-binary=mpi4py mpi4py
+  585  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0 
+  586  conda deactivate
+  587  conda env remove /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  588  conda env remove -p /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  589  conda env list
+  590  module reset
+  591  module load amd-mixed/6.0.0
+  592  module load craype-accel-amd-gfx90a
+  593  module load miniforge3
+  594  # Create & Activate the Conda environment
+  595  conda create -y -n PyTorch_ROCm6_env
+  596  source activate PyTorch_ROCm6_env
+  597  conda env list
+  598  MPICC="cc -shared" pip3 install --no-cache-dir --no-binary=mpi4py mpi4py
+  599  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0
+  600  pushd +1
+  601  ls -lart
+  602  du -sh *
+  603  du -sh .local *
+  604  cd .local/
+  605  ls
+  606  cd crusher/
+  607  ls
+  608  cd miniforge3/
+  609  ls
+  610  cd 23.11.0/
+  611  ls
+  612  cd lib/
+  613  ls
+  614  cd python3.10/
+  615  ls
+  616  cd site-packages/
+  617  ls
+  618  pushd .local/
+  619  pushd ~/.local/
+  620  ls
+  621  cd lib/
+  622  ls
+  623  cd python3.10/
+  624  ls
+  625  ls site-packages/
+  626  pwd
+  627  conda info --base
+  628  conda env list
+  629  pushd /ccs/home/palashmr/packages/miniconda/
+  630  ls
+  631  cd pyt_env/
+  632  ls
+  633  which miniconda
+  634  which conda
+  635  module reset
+  636  which conda
+  637  conda env list
+  638  source activate  /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
+  639  conda  activate  /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
+  640  which conda
+  641  conda activate /lustre/orion/world-shared/stf218/palashmr/miniconda/pyt_env
+  642  which conda
+  643  which miniconda
+  644  module load miniconda
+  645  module load miniforge3
+  646  module reset
+  647  pushd /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
+  648  ls
+  649  cd bin/
+  650  ls
+  651  cd ..
+  652  ls
+  653  cd lib
+  654  ls
+  655  dirs -v
+  656  pushd 5
+  657  pushd +5
+  658  ls
+  659  conda activate /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env/lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
+  660  conda activate /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
+  661  ls
+  662  bash train_fastmri_knee.sh 
+  663  pwd
+  664  conda env list
+  665  dirs -v
+  666  module reset
+  667  module load amd-mixed/6.0.0
+  668  module load craype-accel-amd-gfx90a
+  669  module load miniforge3
+  670  conda create -y -p /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  671  conda activate /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  672  conda deactivate
+  673  source  activate /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env
+  674  MPICC="cc -shared" pip3 install --no-cache-dir --no-binary=mpi4py mpi4py
+  675  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0 
+  676  dirs -v
+  677  cd ../..
+  678  ls
+  679  pwd
+  680  du -sh -d 1 *
+  681  du -sh -d 1 
+  682  du --help
+  683  du -d 1
+  684  du -h -d 1 
+  685  cd /lustre/orion/proj-shared/stf218/brave/
+  686  ls
+  687  cd /lustre/orion/stf218/proj-shared/
+  688  ls
+  689  cd brave/
+  690  ls
+  691  cd ..
+  692  mkdir palashmr
+  693  ls
+  694  cd palashmr/
+  695  pwd
+  696  conda env list
+  697  conda deactivate
+  698  conda env remove -p /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env --all
+  699  conda env remove -p /lustre/orion/stf218/proj-shared/brave/score-MRI/PyTorch_ROCm6_env 
+  700  conda env list
+  701  module reset
+  702  module load amd-mixed/6.0.0
+  703  module load craype-accel-amd-gfx90a
+  704  module load miniforge3
+  705  pwd
+  706  conda create -y -p /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  707  source activate /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  708  MPICC="cc -shared" pip3 install --no-cache-dir --no-binary=mpi4py mpi4py
+  709  pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.0 
+  710  export PATH="/ccs/home/palashmr/.local/crusher/miniforge3/23.11.0/bin:$PATH"
+  711  ls
+  712  dirs -v
+  713  pushd  /lustre/orion/stf218/proj-shared/brave/score-MRI/
+  714  bash train_fastmri_knee.sh 
+  715  pip install decorator
+  716  bash train_fastmri_knee.sh 
+  717  conda env list
+  718  bash train_fastmri_knee.sh 
+  719  conda list | grep tensorflow
+  720  bash train_fastmri_knee.sh 
+  721  pip install tensorflow-rocm==2.14.0.600 
+  722  bash train_fastmri_knee.sh 
+  723  pip install tensorflow-gan
+  724  pip install tensorflow-rocm==2.14.0.600 
+  725  pip install tensorflow-gan==2.0.0
+  726  pip install tensorflow-rocm==2.14.0.600 
+  727  conda remove tensorflow-gan
+  728  conda list | grep tensorflow
+  729  conda list
+  730  pip install tensorflow-rocm==2.14.0.600 
+  731  conda list
+  732  conda env list
+  733  conda list package
+  734  bash train_fastmri_knee.sh 
+  735  conda list conda list
+  736  conda lisat
+  737  conda list
+  738  pip install tensorflow-rocm==2.14.0.600 
+  739  ls /lustre/orion/stf218/proj-shared/palashmr/
+  740  ls /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env/
+  741  ls
+  742  conda remove tensorflow-rocm
+  743  conda remove tensorflow-gan
+  744  conda deactivate
+  745  pwd
+  746  conda env list
+  747  conda activate  /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  748  conda list
+  749  module load miniforge3
+  750  conda list
+  751  pip list
+  752  pip remove tensorflow-gan
+  753  pip uninstall tensorflow-gan
+  754  bash train_fastmri_knee.sh 
+  755  pip list | grep tensorflow
+  756  pip install tensorflow-rocm==2.16.0 
+  757  pip uninstall tensorflow-gan 5.0
+  758  pip uninstall tensorflow-gan
+  759  pip install tensorflow-gan 5.0
+  760  pip install tensorflow-gan
+  761  pip install keras==2.14.0
+  762  pip install tensorflow-rocm==2.14.0 
+  763  pip list tensorflow
+  764  pip show tensorflow
+  765  pip uninstall tensorflow
+  766  pip show tensorflow
+  767  pip show tensorflow-rocm
+  768  pip show keras
+  769  pip show tensorflow-gan
+  770  bash train_fastmri_knee.sh 
+  771  vim /ccs/home/palashmr/.local/crusher/miniforge3/23.11.0/lib/python3.10/site-packages/tensorflow_gan/__init__.py
+  772  pip install tensorflow-rocm==2.14.0 
+  773  pip install tensorflow-rocm==2.14.0.600 
+  774  pip list|tensorflow
+  775  pip list|grep tensorflow
+  776  bash train_fastmri_knee.sh 
+  777  python -c "import tensorflow as tf; print(tf.__version__)"
+  778  python -c "import tensorflow as tf;tf.compat.v1.disable_eager_execution() ; print(tf.__version__)"
+  779  pip list|grep tensorflow
+  780  pip install tensorflow-rocm==2.13.1.600 
+  781  pip list|grep tensorflow
+  782  python -c "import tensorflow as tf; print(tf.__version__)"
+  783  bash train_fastmri_knee.sh 
+  784  pip show tensorflow_probability
+  785  pip install tensorflow_probability==5.0.0
+  786  pip install tensorflow_probability==0.20.1
+  787  bash train_fastmri_knee.sh 
+  788  module load ninja
+  789  bash train_fastmri_knee.sh 
+  790  pip install matplotlib
+  791  bash train_fastmri_knee.sh 
+  792  pip install sigpy
+  793  bash train_fastmri_knee.sh 
+  794  pip install jax
+  795  bash train_fastmri_knee.sh 
+  796  pip install jaxlib
+  797  bash train_fastmri_knee.sh 
+  798  pip list |grep tensorflow
+  799  pip install tensorflow_datasets=10.0.0
+  800  pip install tensorflow_datasets==10.0.0
+  801  pip install tensorflow_datasets=4.4.0
+  802  pip install tensorflow_datasets==4.4.0
+  803  bash train_fastmri_knee.sh 
+  804  pip install evaluation
+  805  bash train_fastmri_knee.sh 
+  806  pip install ml_collections
+  807  bash train_fastmri_knee.sh 
+  808  pip install ninja
+  809  bash train_fastmri_knee.sh 
+  810  pip list | grep ninja
+  811  pip uninstall -y ninja
+  812  bash train_fastmri_knee.sh 
+  813  conda install ninja
+  814  bash train_fastmri_knee.sh 
+  815  conda list |grep ninja
+  816  pip 
+  817  pip install ninja
+  818  ls ~/.cache/torch_extensions/
+  819  rm -r ~/.cache/torch_extensions/*
+  820  conda deactivate
+  821  conda env list
+  822  conda activate /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  823  bash train_fastmri_knee.sh 
+  824  pip  uninstall -y ninja
+  825  pip install ninja==1.10.2
+  826  bash train_fastmri_knee.sh 
+  827  rm -r ~/.cache/torch_extensions/*
+  828  bash train_fastmri_knee.sh 
+  829  pip list | grep torch
+  830  pip list | grep rocm
+  831  bash train_fastmri_knee.sh 
+  832  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/op/upfirdn2d.py
+  833  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/models/up_or_down_sampling.py
+  834  bash train_fastmri_knee.sh 
+  835  rocminfo
+  836  rocm-smi
+  837  bash train_fastmri_knee.sh 
+  838  conda deactivate
+  839  bash train_fastmri_knee.sh 
+  840  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/models/up_or_down_sampling.py
+  841  bash train_fastmri_knee.sh 
+  842  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/models/up_or_down_sampling.py
+  843  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/op/upfirdn2d.py
+  844  bash train_fastmri_knee.sh 
+  845  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/op/upfirdn2d.py
+  846  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/models/up_or_down_sampling.py
+  847  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/op/upfirdn2d.py
+  848  bash train_fastmri_knee.sh 
+  849  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/op/upfirdn2d.py
+  850  which conda
+  851  which miniforge3
+  852  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/op/upfirdn2d.py
+  853  bash train_fastmri_knee.sh 
+  854  conda env list
+  855  conda env remove /ccs/home/palashmr/packages/miniconda/pyt_env/PyTorch_ROCm6_env
+  856  conda env remove -p /ccs/home/palashmr/packages/miniconda/pyt_env/PyTorch_ROCm6_env
+  857  conda env list
+  858  ls  /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  859  ls  /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env/conda-meta/
+  860  conda env remove -p /lustre/orion/world-shared/stf218/palashmr/miniconda
+  861  conda env list
+  862  conda activate  /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  863  bash train_fastmri_knee.sh 
+  864  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/models/layerspp.py
+  865  vim /lustre/orion/stf218/proj-shared/brave/score-MRI/models/up_or_down_sampling.py
+  866  bash train_fastmri_knee.sh 
+  867  /usr/bin/python3 /autofs/nccs-svm1_home1/palashmr/.vscode-server/extensions/ms-python.python-2024.4.0/python_files/printEnvVariablesToFile.py /autofs/nccs-svm1_home1/palashmr/.vscode-server/extensions/ms-python.python-2024.4.0/python_files/deactivate/bash/envVars.txt
+  868  pushd  /lustre/orion/stf218/proj-shared/brave/score-MRI/
+  869  conda list
+  870  conda env list
+  871  conda activate /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  872  conda env export>PyTorch_ROCm6_env.yml
+  873  ls
+  874  git
+  875  git status
+  876  git log
+  877  git git add PyTorch_ROCm6_env.yml gpu_test.py 
+  878  git add PyTorch_ROCm6_env.yml gpu_test.py 
+  879  git commit -m "gpu: 2d_sampling error"
+  880  git push
+  881  pwd
+  882  dirs -v
+  883  cd ..
+  884  ls
+  885  cd brave_database/
+  886  ls
+  887  cd fastMRI/
+  888  ls
+  889  dirs -v
+  890  pushd +1
+  891  ls
+  892  dirs -v
+  893  pushd +1
+  894  ls
+  895  cd ../..
+  896  ls
+  897  cd score-MRI/
+  898  ls
+  899  git status
+  900  git add .
+  901  ls
+  902  vim configs/ve/fastmri_knee_320_ncsnpp_continuous.py 
+  903  dirs -v
+  904  ls
+  905  cd ..
+  906  ls
+  907  cd brave_database/
+  908  ls
+  909  cd fastMRI/
+  910  ls
+  911  cp singlecoil_train/   xrv@neutrons-dgx01:/raid/xrv/
+  912  scp -r singlecoil_train/   xrv@neutrons-dgx01:/raid/xrv/
+  913  scp -r singlecoil_train/ xrv@neutrons-dgx01:~/raid/xrv/
+  914  ping scp -r singlecoil_train/ xrv@neutrons-dgx01:~/raid/xrv/
+  915  ping neutrons-dgx01
+  916  ping neutrons-dgx01.ornl.gov
+  917  ping xrv@neutrons-dgx01.ornl.gov
+  918  ping scp -r singlecoil_train/ neutrons-dgx01.gov.ornl:~/raid/xrv/
+  919  ping scp -r singlecoil_train/ neutrons-dgx01.gov.ornl
+  920  ping scp -r singlecoil_train/ xrv@neutrons-dgx01.gov.ornl:~
+  921  ping neutrons-dgx01.ornl.gov
+  922  ping scp -r singlecoil_train/ xrv@neutrons-dgx01.ornl.gov:~
+  923  scp -r singlecoil_train/ xrv@neutrons-dgx01.ornl.gov:~/raid/xrv/
+  924  ls
+  925  scp 5vnq-sf.cif   xrv@neutrons-dgx01.ornl.gov:~/raid/xrv/
+  926  ssh neutrons-dgx01.ornl.gov
+  927  ssh fr
+  928  ssh palashmr@frontier.olcf.ornl.gov
+  929  ls
+  930  ssh neutrons-dgx01.ornl.gov
+  931  ssh palashmr@frontier.olcf.ornl.gov
+  932  ls
+  933  touch tempf.txt
+  934  pusdh /lustre/orion/stf218/proj-shared/brave/score-MRI/
+  935  pushd /lustre/orion/stf218/proj-shared/brave/score-MRI/
+  936  ls
+  937  cd .
+  938  ls
+  939  cd ..
+  940  ls
+  941  cd brave_database/
+  942  ls
+  943  cd fastMRI/
+  944  ls
+  945  pwd
+  946  cd singlecoil_train/
+  947  pwd
+  948  ls
+  949  ping scp -r singlecoil_train/ xrv@neutrons-dgx01.ornl.gov:~ls
+  950  vimls
+  951  ls
+  952  dirs -v
+  953  pushd +1
+  954  ls
+  955  dirs -v
+  956  pushd +1
+  957  ls
+  958  cd ..
+  959  ls
+  960  d ..
+  961  ls
+  962  cd ..
+  963  ls
+  964  cd score-MRI/
+  965  ls
+  966  vim configs/ve/*
+  967  vim configs/*
+  968  ls
+  969  git status
+  970  git add configs/ve/fastmri_knee_320_ncsnpp_continuous.py
+  971  git add datasets.py losses.py main_fastmri.py models/utils.py run_lib_fastmri.py  run_scoremri.slurm train_fastmri_knee.sh 
+  972  git status
+  973  git commit -m "same as last commit"
+  974  git push
+  975  vim configs/ve/fastmri_knee_320_ncsnpp_continuous.py 
+  976  ls /lustre/orion/stf218/proj-shared/brave/brave_database/fastMRI/singlecoil_train
+  977  conda env lisgt
+  978  conda env list
+  979  conda actiavte /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  980  conda activate /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  981  conda clean -all
+  982  pwd
+  983  ls
+  984  conda env list
+  985  conda activate
+  986  conda activate /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  987  pushd /lustre/orion/stf218/proj-shared/brave/score-MRI/
+  988  bash train_fastmri_knee.sh 
+  989  conda list
+  990  cat *yml
+  991  vim PyTorch_ROCm6_env.yml 
+  992  conda cleann -all
+  993  conda clean -all
+  994  conda env list
+  995  conda activate  /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
+  996  conda clean -all
+  997  conda env list
+  998  conda activate /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env
+  999  bash train_fastmri_knee.sh 
+ 1000  pwd
+ 1001  pusdh /lustre/orion/stf218/proj-shared/brave/score-MRI/
+ 1002  pushd /lustre/orion/stf218/proj-shared/brave/score-MRI/
+ 1003  bash train_fastmri_knee.sh 
+ 1004  conda list
+ 1005  ls
+ 1006  conda env udpate -f PyTorch_ROCm6_env.yml 
+ 1007  conda env update -f PyTorch_ROCm6_env.yml 
+ 1008  conda deactivate
+ 1009  conda env list
+ 1010  conda remove -p /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env -all
+ 1011  conda remove -p /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env 
+ 1012  conda remove -h
+ 1013  conda remove -p /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env --all
+ 1014  y
+ 1015  conda remove -p -y  /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env --all
+ 1016  conda env update -p /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env -f PyTorch_ROCm6_env.yml 
+ 1017  conda remove /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env --all
+ 1018  conda remove -p /lustre/orion/stf218/proj-shared/palashmr/PyTorch_ROCm6_env --all
+ 1019  conda env list
+ 1020  conda create -n score-mr-amd -f PyTorch_ROCm6_env.yml 
+ 1021  conda env  create -n score-mr-amd -f PyTorch_ROCm6_env.yml 
+ 1022  cat PyTorch_ROCm6_env.yml 
+ 1023  ls
+ 1024  cat requirements.txt 
+ 1025  conda env list
+ 1026  conda activate score-mri-amd
+ 1027  conda remove -p score-mr-amd  --all
+ 1028  conda env list
+ 1029  conda remove -n score-mr-amd  --all
+ 1030  conda env list
+ 1031  conda env  create -n score-mri-amd -f PyTorch_ROCm6_env.yml 
+ 1032  conda remove -n score-mr-amd  --all
+ 1033  vim install.sh 
+ 1034  bash install.sh 
+ 1035  cat install.sh 
+ 1036  conda activate score-mri-amd
+ 1037  conda install pytorch torchvision torchaudio cudatoolkit=10.2 -c pytorch
+ 1038  conda list | grep torch
+ 1039  conda remove pytorch
+ 1040  conda list | grep torch
+ 1041  conda list
+ 1042  ls
+ 1043  rm PyTorch_ROCm6_env.yml
+ 1044  cd ..
+ 1045  ls
+ 1046  cd score-MRI/
+ 1047  ls
+ 1048  wget https://download.pytorch.org/whl/cu115/torch-1.11.0%2Bcu115-cp38-cp38-linux_x86_64.whl#sha256=02779dc7c0cd188416496adb233ae9e3988a9aa73d9ebba3624507d0f2111f3c
+ 1049  pip install torch-1.11.0+cu115-cp38-cp38-linux_x86_64.whl 
+ 1050  conda remove pytorch
+ 1051  conda list | grep torch
+ 1052  conda remove torch
+ 1053  pip uninstall torch
+ 1054  history
+ 1055  history>history.txt

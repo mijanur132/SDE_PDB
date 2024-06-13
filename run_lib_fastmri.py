@@ -58,7 +58,11 @@ def init_distributed(rank,ws):
   torch.cuda.set_device(rank)
 
 
+<<<<<<< HEAD
   #************************************************************
+=======
+torch.cuda.empty_cache()
+>>>>>>> 1dc5f315b9c2f81b84e2046b947171c10d92c4c4
 
 def train( rank, world_size, config, workdir):
   """Runs the training pipeline.
@@ -82,6 +86,7 @@ def train( rank, world_size, config, workdir):
   device= torch.device('cuda', rank)
 
 
+<<<<<<< HEAD
 # Check if GPU is available
  # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -92,6 +97,8 @@ def train( rank, world_size, config, workdir):
 
  
  
+=======
+>>>>>>> 1dc5f315b9c2f81b84e2046b947171c10d92c4c4
   # Initialize model.
 
   score_model = mutils.create_model(config).to(device)
