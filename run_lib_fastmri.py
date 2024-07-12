@@ -58,11 +58,7 @@ def init_distributed(rank,ws):
   torch.cuda.set_device(rank)
 
 
-<<<<<<< HEAD
   #************************************************************
-=======
-torch.cuda.empty_cache()
->>>>>>> 1dc5f315b9c2f81b84e2046b947171c10d92c4c4
 
 def train( rank, world_size, config, workdir):
   """Runs the training pipeline.
@@ -86,7 +82,6 @@ def train( rank, world_size, config, workdir):
   device= torch.device('cuda', rank)
 
 
-<<<<<<< HEAD
 # Check if GPU is available
  # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -97,8 +92,6 @@ def train( rank, world_size, config, workdir):
 
  
  
-=======
->>>>>>> 1dc5f315b9c2f81b84e2046b947171c10d92c4c4
   # Initialize model.
 
   score_model = mutils.create_model(config).to(device)
@@ -127,7 +120,7 @@ def train( rank, world_size, config, workdir):
   train_loader, eval_loader= datasets.create_dataloader_ddp(config,rank,world_size)
 
   num_data = len(train_loader.dataset)
-  print(num_data)
+  print("num data:",num_data)
 
   #print(train_dl.dataset.data_list), gives the names of all numpy arrays in the train data folder
 
@@ -171,6 +164,8 @@ def train( rank, world_size, config, workdir):
   # In case there are multiple hosts (e.g., TPU pods), only log to host 0
   logging.info("Starting training loop at step %d." % (initial_epoch,))
 
+  loss=0
+
   for epoch in range(initial_epoch, config.training.epochs):
     train_loader.sampler.set_epoch(epoch)
     print('=================================================')
@@ -179,7 +174,8 @@ def train( rank, world_size, config, workdir):
 
     for step, batch in enumerate(train_loader, start=1):
       
-      #print(batch.shape)
+     # print(batch.shape)
+     # print(batch[0])
       batch = scaler(batch.to(device))
       batch=batch.real
       batch=batch.float()

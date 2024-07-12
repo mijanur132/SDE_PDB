@@ -358,7 +358,7 @@ def create_dataloader_ddp(configs, rank,world_size, evaluation=False, sort=True)
     print(x)
     train_dataset = fastmri_knee(x)
     
-    y=Path(configs.data.root)
+    y=Path(configs.data.val_root)
     print(y)
     val_dataset = fastmri_knee_infer(x, sort=sort)
   

@@ -37,7 +37,8 @@ def get_config():
   data = config.data
   data.khadiza=True
   data.dataset = 'fastmri_knee'
-  data.root ='/raid/xrv/khadiza/10-20knpy/processed/'
+  data.root ='/raid/xrv/khadiza/10-20knpy/split/'
+  data.val_root='/raid/xrv/khadiza/20-30knpy/processed/'
   data.image_size = 320
   data.is_multi = False
   data.is_complex = False
