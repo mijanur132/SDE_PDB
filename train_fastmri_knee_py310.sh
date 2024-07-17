@@ -1,5 +1,6 @@
 #!/bin/bash
 
+module purge
 
 export http_proxy=http://proxy.ccs.ornl.gov:3128/
 export https_proxy=https://proxy.ccs.ornl.gov:3128/
@@ -9,7 +10,8 @@ export TORCH_HOME=$PWD/cache
 module load miniforge3
 source /autofs/nccs-svm1_sw/frontier/python/3.10/miniforge3/23.11.0/etc/profile.d/conda.sh
 
-conda activate /ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd
+conda activate /ccs/home/palashmr/packages/miniconda/pyt_env/py310
+#conda activate /ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd
 
 # Print Python executable and version
 which python
@@ -21,7 +23,9 @@ python -V
 
 # List installed packages to check if TensorFlow is present
 #python -m pip list
-export PATH=/ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd/bin:$PATH
+export PATH=/ccs/home/palashmr/packages/miniconda/pyt_env/py310/bin:$PATH
+#export PATH=/ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd/bin:$PATH
+
 
 # Test TensorFlow import and print its version
 python -c "import tensorflow as tf; print(tf.__version__)"
@@ -62,7 +66,9 @@ export MIOPEN_CUSTOM_CACHE_DIR=${MIOPEN_USER_DB_PATH}
 rm -rf ${MIOPEN_USER_DB_PATH}
 mkdir -p ${MIOPEN_USER_DB_PATH}
 
-export CUDA_VISIBLE_DEVICES=0,1
+#export CUDA_VISIBLE_DEVICES=0,1
+
+export CUDA_VISIBLE_DEVICES=0,1  #PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:128 HSA_OVERRIDE_GFX_VERSION=10.3.0 
 
 export MASTER_ADDR=127.0.0.1
 export MASTER_PORT=29500
