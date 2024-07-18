@@ -19,6 +19,7 @@
 import gc
 import io
 import os
+import glob
 import time
 
 import numpy as np
@@ -109,9 +110,25 @@ def train( rank, world_size, config, workdir):
   tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
 
-  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_75.pth")
-  #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
-  state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+  # List all .pth files in the checkpoint directory
+  checkpoint_files = glob.glob(os.path.join(checkpoint_dir, "*.pth"))
+
+  # Sort files by modification time in descending order
+  checkpoint_files.sort(key=os.path.getmtime, reverse=True)
+
+  # Select the most recent checkpoint file
+  if checkpoint_files:
+      latest_checkpoint = checkpoint_files[0]
+      print(f"latest checkpoint:{latest_checkpoint}")
+      checkpoint_dir_temp = os.path.join(workdir, "checkpoints", latest_checkpoint)
+      #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
+      state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+  else:
+      latest_checkpoint = None
+      print("No checkpoint files found.")
+
+
+ 
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
   # print(initial_epoch)
@@ -222,7 +239,7 @@ def train( rank, world_size, config, workdir):
 
     # Save a checkpoint for every 10 epoch
          # Generate and save samples for every epoch
-    if (config.training.snapshot_sampling and epoch>1) and (epoch%3 ==0 and rank==0):
+    if (config.training.snapshot_sampling and epoch>1) and (epoch%1 ==0 and rank==0):
       ema.store(score_model.parameters())
       ema.copy_to(score_model.parameters())
       sample, n = sampling_fn(score_model)
@@ -242,11 +259,11 @@ def train( rank, world_size, config, workdir):
           os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
         save_image(image_grid, fout)            
 
-    if (epoch>1 and epoch%5==0) and rank==0:
+    if (epoch>1 and epoch%1==0) and rank==0:
       state['epoch']=epoch
       save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
 
- 
+ 2106667
 
 
 def train_regression(config, workdir):

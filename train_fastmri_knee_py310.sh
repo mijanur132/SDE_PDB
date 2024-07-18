@@ -1,4 +1,16 @@
 #!/bin/bash
+#SBATCH -A STF218
+#SBATCH -J scoreMRI
+#SBATCH -o slurm/%j.out
+#SBATCH -e slurm/%j.err
+#SBATCH -N 1
+#SBATCH -t 2:00:00
+#SBATCH --ntasks-per-node=8
+##SBATCH --cpus-per-task=8
+#SBATCH --gpus-per-node=8
+
+
+ 
 
 module purge
 
@@ -68,12 +80,13 @@ mkdir -p ${MIOPEN_USER_DB_PATH}
 
 #export CUDA_VISIBLE_DEVICES=0,1
 
-export CUDA_VISIBLE_DEVICES=0,1  #PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:128 HSA_OVERRIDE_GFX_VERSION=10.3.0 
+export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7  #PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:128 HSA_OVERRIDE_GFX_VERSION=10.3.0 
 
 export MASTER_ADDR=127.0.0.1
 export MASTER_PORT=29500
+export TORCH_EXTENSIONS_DIR=$PWD  #each node need a place with write permission, we are providing that with this command
 
-python main_fastmri.py \
+srun python main_fastmri.py \
  --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py\
  --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir\
  --mode='train'  \
