@@ -1,13 +1,32 @@
 #!/bin/bash
+#SBATCH -A STF218
+#SBATCH -J score_MRI
+#SBATCH -o slurm/%j.out
+#SBATCH -e slurm/%j.err
+#SBATCH -N 1
+#SBATCH -t 1:00:00
+#SBATCH -S 0
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=8
+##SBATCH -C nvme
 
+ 
 module purge
+
+module load PrgEnv-gnu
+module load gcc/11.2.0
+module load amd-mixed/6.0.0
+#module load craype-accel-amd-gfx90a
+module load ninja
+
+module load miniforge3
 
 export http_proxy=http://proxy.ccs.ornl.gov:3128/
 export https_proxy=https://proxy.ccs.ornl.gov:3128/
 # export OMP_NUM_THREADS=2
 
 export TORCH_HOME=$PWD/cache
-module load miniforge3
+
 source /autofs/nccs-svm1_sw/frontier/python/3.10/miniforge3/23.11.0/etc/profile.d/conda.sh
 
 conda activate /ccs/home/palashmr/packages/miniconda/pyt_env/py310
@@ -36,11 +55,6 @@ export LD_PRELOAD="/usr/lib64/libcrypto.so /usr/lib64/libssh.so.4 /usr/lib64/lib
 # module load gcc/11.2.0
 # module load rocm/6.0.0
 
-module load PrgEnv-gnu
-module load gcc/11.2.0
-module load amd-mixed/6.0.0
-module load craype-accel-amd-gfx90a
-module load ninja
 
 export ROCM_HOME=/opt/rocm-6.0.0
 #export PATH=/opt/rocm-6.0.0/bin
@@ -66,19 +80,30 @@ export MIOPEN_CUSTOM_CACHE_DIR=${MIOPEN_USER_DB_PATH}
 rm -rf ${MIOPEN_USER_DB_PATH}
 mkdir -p ${MIOPEN_USER_DB_PATH}
 
-#export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=0,1
 
-export CUDA_VISIBLE_DEVICES=0,1  #PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:128 HSA_OVERRIDE_GFX_VERSION=10.3.0 
+#export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5  #PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:128 HSA_OVERRIDE_GFX_VERSION=10.3.0 
 
-export MASTER_ADDR=127.0.0.1
+# export MASTER_ADDR=127.0.0.1
+# export MASTER_PORT=29500
+
+export MASTER_ADDR=`ip -f inet addr show hsn0 | sed -En -e 's/.*inet ([0-9.]+).*/\1/p' | head -1`
+echo "MASTER_ADDR"=$MASTER_ADDR
+export NCCL_SOCKET_IFNAME=hsn
 export MASTER_PORT=29500
 
-python main_fastmri.py \
- --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py\
- --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir\
- --mode='train'  \
- --workdir=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir\
 
+# python -m torch.distributed.launch main_fastmri.py \
+#  --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py\
+#  --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir\
+#  --mode='train'  \
+#  --workdir=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir\
+
+srun python main_fastmri.py \
+ --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py \
+ --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir \
+ --mode='train' \
+ --workdir=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir
 
 
 

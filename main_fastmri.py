@@ -22,7 +22,7 @@ from ml_collections.config_flags import config_flags
 import logging
 import os
 import tensorflow as tf
-import torch.multiprocessing as mp
+#import torch.multiprocessing as mp
 # ##
 # import pdb_attach
 # pdb_attach.listen(50000)
@@ -48,17 +48,32 @@ flags.DEFINE_string("eval_folder", "eval",
                     "The folder name for storing evaluation results")
 flags.mark_flags_as_required(["workdir", "config", "mode"])
 
-def train_wrapper(rank, world_size, config, workdir):
-  run_lib_fastmri.train(rank, world_size, config, workdir)
+# def train_wrapper(rank, world_size, config, workdir):
+#   run_lib_fastmri.train(rank, world_size, config, workdir)
 
 def main(argv):
-  visible_devices = os.getenv('CUDA_VISIBLE_DEVICES')
-  if visible_devices is None:
-      raise ValueError("No GPUs specified in CUDA_VISIBLE_DEVICES")
+  # visible_devices = os.getenv('CUDA_VISIBLE_DEVICES')
+  # if visible_devices is None:
+  #     raise ValueError("No GPUs specified in CUDA_VISIBLE_DEVICES")
   
-  gpus = list(map(int, visible_devices.split(',')))
-  gpus = list(map(int, visible_devices.split(',')))
-  world_size = len(gpus)
+  # gpus = list(map(int, visible_devices.split(',')))
+  # gpus = list(map(int, visible_devices.split(',')))
+  # world_size = len(gpus)
+  if "SLURM_NTASKS" in os.environ:
+
+    world_size=int(os.environ["SLURM_NTASKS"])
+    rank=int(os.environ["SLURM_PROCID"])
+    address=os.environ["MASTER_ADDR"]
+    port=os.environ["MASTER_PORT"]
+  else:
+    world_size=1
+    rank=0
+    address="127.0.0.1"
+    port=29500
+
+  
+
+      
 
   print(FLAGS.config)
   if FLAGS.mode == "train" or FLAGS.mode == "train_regression":
@@ -77,9 +92,9 @@ def main(argv):
     
     if FLAGS.mode == "train":
      
-      print("train..")
-      mp.spawn(train_wrapper, args=(world_size, FLAGS.config, FLAGS.workdir), nprocs=world_size, join=True)
-
+      print(f"train..ws:{world_size}, rank:{rank}")
+      run_lib_fastmri.train(rank,world_size, address,port, FLAGS.config, FLAGS.workdir)
+     
 
     elif FLAGS.mode == "train_regression":
       run_lib_fastmri.train_regression(FLAGS.config, FLAGS.workdir)

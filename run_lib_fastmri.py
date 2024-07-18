@@ -23,7 +23,7 @@ import time
 
 import numpy as np
 import tensorflow as tf
-import tensorflow_gan as tfgan
+#import tensorflow_gan as tfgan
 import logging
 # Keep the import below for registering all model definitions
 from models import ncsnpp
@@ -47,20 +47,21 @@ import torch.distributed as dist
 from torch.utils.data import DataLoader as DL
 from torch.utils.data import DistributedSampler as DS
 from torch.nn.parallel import DistributedDataParallel as DDP
-import torch.multiprocessing as mp
+#import torch.multiprocessing as mp
 import argparse
 
 FLAGS = flags.FLAGS
 logger = logging.getLogger() 
 
-def init_distributed(rank,ws):
-  dist.init_process_group(backend="nccl", rank=rank, world_size=ws)
+def init_distributed(rank,ws,address,port):
+  dist.init_process_group(backend="nccl", init_method=f"tcp://{address}:{port}", rank=rank, world_size=ws)
   torch.cuda.set_device(rank)
+  print("rank and world size:",dist.rank(), dist.world_size())
 
 
   #************************************************************
 
-def train( rank, world_size, config, workdir):
+def train( rank, world_size, address, port, config, workdir):
   """Runs the training pipeline.
 
   Args:
@@ -78,9 +79,9 @@ def train( rank, world_size, config, workdir):
   writer = tensorboard.SummaryWriter(tb_dir)
 
 
-  init_distributed(rank,world_size)
+  init_distributed(rank,world_size, address, port)
   device= torch.device('cuda', rank)
-
+  print(f"Process {rank} using device: {device}")
 
 # Check if GPU is available
  # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -549,29 +550,28 @@ def evaluate(config,
       data_pools = data_stats["pool_3"]
 
       # Compute FID/KID/IS on all samples together.
-      if not inceptionv3:
-        inception_score = tfgan.eval.classifier_score_from_logits(all_logits)
-      else:
-        inception_score = -1
+      # if not inceptionv3:
+      #   inception_score = tfgan.eval.classifier_score_from_logits(all_logits)
+      # else:
+      #   inception_score = -1
 
-      fid = tfgan.eval.frechet_classifier_distance_from_activations(
-        data_pools, all_pools)
+      #fid = tfgan.eval.frechet_classifier_distance_from_activations(data_pools, all_pools)
       # Hack to get tfgan KID work for eager execution.
       tf_data_pools = tf.convert_to_tensor(data_pools)
       tf_all_pools = tf.convert_to_tensor(all_pools)
-      kid = tfgan.eval.kernel_classifier_distance_from_activations(
-        tf_data_pools, tf_all_pools).numpy()
+      #kid = tfgan.eval.kernel_classifier_distance_from_activations(
+        #tf_data_pools, tf_all_pools).numpy()
       del tf_data_pools, tf_all_pools
 
-      logging.info(
-        "ckpt-%d --- inception_score: %.6e, FID: %.6e, KID: %.6e" % (
-          ckpt, inception_score, fid, kid))
+      # logging.info(
+      #   "ckpt-%d --- inception_score: %.6e, FID: %.6e, KID: %.6e" % (
+      #     ckpt, inception_score, fid, kid))
 
-      with tf.io.gfile.GFile(os.path.join(eval_dir, f"report_{ckpt}.npz"),
-                             "wb") as f:
-        io_buffer = io.BytesIO()
-        np.savez_compressed(io_buffer, IS=inception_score, fid=fid, kid=kid)
-        f.write(io_buffer.getvalue())
+      # with tf.io.gfile.GFile(os.path.join(eval_dir, f"report_{ckpt}.npz"),
+      #                        "wb") as f:
+      #   io_buffer = io.BytesIO()
+      #   np.savez_compressed(io_buffer, IS=inception_score, fid=fid, kid=kid)
+      #   f.write(io_buffer.getvalue())
 
 
 
