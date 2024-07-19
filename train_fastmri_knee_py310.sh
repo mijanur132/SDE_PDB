@@ -3,12 +3,12 @@
 #SBATCH -J score_MRI
 #SBATCH -o slurm/%j.out
 #SBATCH -e slurm/%j.err
-#SBATCH -N 1
-#SBATCH -t 1:00:00
+#SBATCH -N 2
+#SBATCH -t 00:30:00
 #SBATCH -S 0
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=8
-##SBATCH -C nvme
+
 
  
 module purge
@@ -80,7 +80,7 @@ export MIOPEN_CUSTOM_CACHE_DIR=${MIOPEN_USER_DB_PATH}
 rm -rf ${MIOPEN_USER_DB_PATH}
 mkdir -p ${MIOPEN_USER_DB_PATH}
 
-export CUDA_VISIBLE_DEVICES=0,1
+#export CUDA_VISIBLE_DEVICES=0,1
 
 #export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5  #PYTORCH_CUDA_ALLOC_CONF=garbage_collection_threshold:0.9,max_split_size_mb:128 HSA_OVERRIDE_GFX_VERSION=10.3.0 
 
@@ -92,12 +92,9 @@ echo "MASTER_ADDR"=$MASTER_ADDR
 export NCCL_SOCKET_IFNAME=hsn
 export MASTER_PORT=29500
 
+export TORCH_EXTENSIONS_DIR="/lustre/orion/stf218/proj-shared/brave/score-MRI/temp/"  #to have a write directory
+export PYTHONUNBUFFERED=1   #for immeideate printing.
 
-# python -m torch.distributed.launch main_fastmri.py \
-#  --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py\
-#  --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir\
-#  --mode='train'  \
-#  --workdir=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir\
 
 srun python main_fastmri.py \
  --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py \

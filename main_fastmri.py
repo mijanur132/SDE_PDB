@@ -16,12 +16,14 @@
 """Training and evaluation"""
 
 import run_lib_fastmri
+print("before app")
 from absl import app
+print("after app")
 from absl import flags
 from ml_collections.config_flags import config_flags
 import logging
 import os
-import tensorflow as tf
+#import tensorflow as tf
 #import torch.multiprocessing as mp
 # ##
 # import pdb_attach
@@ -59,26 +61,29 @@ def main(argv):
   # gpus = list(map(int, visible_devices.split(',')))
   # gpus = list(map(int, visible_devices.split(',')))
   # world_size = len(gpus)
+
+  print(" entered main.........")
+
   if "SLURM_NTASKS" in os.environ:
 
     world_size=int(os.environ["SLURM_NTASKS"])
     rank=int(os.environ["SLURM_PROCID"])
     address=os.environ["MASTER_ADDR"]
     port=os.environ["MASTER_PORT"]
+
+    print(f"world size and rank:{world_size}, {rank}")
   else:
     world_size=1
     rank=0
     address="127.0.0.1"
     port=29500
 
-  
-
-      
 
   print(FLAGS.config)
+
   if FLAGS.mode == "train" or FLAGS.mode == "train_regression":
     # Create the working directory
-    tf.io.gfile.makedirs(FLAGS.workdir)
+    #tf.io.gfile.makedirs(FLAGS.workdir)
     # Set logger so that it outputs to both console and file
     # Make logging work for both disk and Google Cloud Storage
     gfile_stream = open(os.path.join(FLAGS.workdir, 'stdout.txt'), 'w')
@@ -106,4 +111,5 @@ def main(argv):
 
 
 if __name__ == "__main__":
+  print("before main is called.......")
   app.run(main)

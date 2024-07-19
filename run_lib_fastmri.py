@@ -22,10 +22,13 @@ import os
 import time
 
 import numpy as np
+print("before tensorflow")
 import tensorflow as tf
+print("after tensorflow")
 #import tensorflow_gan as tfgan
 import logging
 # Keep the import below for registering all model definitions
+print("after logging")
 from models import ncsnpp
 import losses
 import sampling
@@ -35,10 +38,15 @@ import datasets
 import evaluation
 #import likelihood
 import sde_lib
+
 from absl import flags
+print("after absl")
 import torch
+print("after torch")
 from torch import nn
+print("before tb")
 from torch.utils import tensorboard
+print("after tb")
 from torchvision.utils import make_grid, save_image
 from utils import save_checkpoint, restore_checkpoint, restore_checkpoint_disto_2_no_dist, get_mask, kspace_to_nchw, root_sum_of_squares
 from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
@@ -56,7 +64,7 @@ logger = logging.getLogger()
 def init_distributed(rank,ws,address,port):
   dist.init_process_group(backend="nccl", init_method=f"tcp://{address}:{port}", rank=rank, world_size=ws)
   torch.cuda.set_device(rank)
-  print("rank and world size:",dist.rank(), dist.world_size())
+  print("***************rank and world size*****************:",dist.get_rank(), dist.get_world_size()) ### most like wrong
 
 
   #************************************************************

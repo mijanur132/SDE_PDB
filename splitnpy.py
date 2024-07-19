@@ -23,8 +23,8 @@ def split_and_save_npy_files(input_directory, output_directory):
             continue
         
         # Calculate the number of chunks
-        num_chunks = data.shape[0] // 50
-        if data.shape[0] % 50 != 0:
+        num_chunks = data.shape[0] // 40
+        if data.shape[0] % 40 != 0:
             num_chunks += 1
         
         chunks = np.array_split(data, num_chunks, axis=0)
@@ -32,6 +32,9 @@ def split_and_save_npy_files(input_directory, output_directory):
         for i, chunk in enumerate(chunks):
             new_file_name = f"{os.path.splitext(file)[0]}_{i+1}.npy"
             new_file_path = os.path.join(output_directory, new_file_name)
+            if chunk.size==0:
+                print("chunk empty...")
+                continue
             try:
                 np.save(new_file_path, chunk)
                 print(f"Saved chunk {i+1} with shape {chunk.shape} as {new_file_name}")
