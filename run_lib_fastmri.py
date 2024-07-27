@@ -15,38 +15,35 @@
 
 # pylint: skip-file
 """Training and evaluation for score-based generative models. """
-
 import gc
 import io
 import os
 import time
 
 import numpy as np
-print("before tensorflow")
-import tensorflow as tf
-print("after tensorflow")
+
 #import tensorflow_gan as tfgan
 import logging
 # Keep the import below for registering all model definitions
-print("after logging")
+
 from models import ncsnpp
 import losses
 import sampling
 from models import utils as mutils
 from models.ema import ExponentialMovingAverage
 import datasets
-import evaluation
+#import evaluation
 #import likelihood
 import sde_lib
 
 from absl import flags
-print("after absl")
+
 import torch
-print("after torch")
+
 from torch import nn
-print("before tb")
-from torch.utils import tensorboard
-print("after tb")
+
+#from torch.utils import tensorboard
+
 from torchvision.utils import make_grid, save_image
 from utils import save_checkpoint, restore_checkpoint, restore_checkpoint_disto_2_no_dist, get_mask, kspace_to_nchw, root_sum_of_squares
 from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
@@ -57,19 +54,24 @@ from torch.utils.data import DistributedSampler as DS
 from torch.nn.parallel import DistributedDataParallel as DDP
 #import torch.multiprocessing as mp
 import argparse
+import wandb 
+
 
 FLAGS = flags.FLAGS
 logger = logging.getLogger() 
 
-def init_distributed(rank,ws,address,port):
+
+
+def init_distributed(rank,local_rank,ws,address,port):
   dist.init_process_group(backend="nccl", init_method=f"tcp://{address}:{port}", rank=rank, world_size=ws)
-  torch.cuda.set_device(rank)
+
+  torch.cuda.set_device(local_rank)
   print("***************rank and world size*****************:",dist.get_rank(), dist.get_world_size()) ### most like wrong
 
 
   #************************************************************
 
-def train( rank, world_size, address, port, config, workdir):
+def train( local_rank, rank, world_size, address, port, config, workdir):
   """Runs the training pipeline.
 
   Args:
@@ -80,15 +82,14 @@ def train( rank, world_size, address, port, config, workdir):
 
   # Create directories for experimental logs
   sample_dir = os.path.join(workdir, "samples")
-  tf.io.gfile.makedirs(sample_dir)
+  #tf.io.gfile.makedirs(sample_dir)
 
-  tb_dir = os.path.join(workdir, "tensorboard")
-  tf.io.gfile.makedirs(tb_dir)
-  writer = tensorboard.SummaryWriter(tb_dir)
+  #tb_dir = os.path.join(workdir, "tensorboard")
+  #tf.io.gfile.makedirs(tb_dir)
+  #writer = tensorboard.SummaryWriter(tb_dir)
 
-
-  init_distributed(rank,world_size, address, port)
-  device= torch.device('cuda', rank)
+  init_distributed(rank,local_rank,world_size, address, port)
+  device= torch.device('cuda', local_rank)
   print(f"Process {rank} using device: {device}")
 
 # Check if GPU is available
@@ -104,7 +105,7 @@ def train( rank, world_size, address, port, config, workdir):
   # Initialize model.
 
   score_model = mutils.create_model(config).to(device)
-  score_model=DDP(score_model, device_ids=[rank])
+  score_model=DDP(score_model, device_ids=[local_rank])
 
   ema = ExponentialMovingAverage(score_model.parameters(), decay=config.model.ema_rate)
   optimizer = losses.get_optimizer(config, score_model.parameters())
@@ -114,8 +115,8 @@ def train( rank, world_size, address, port, config, workdir):
   print(workdir)
   checkpoint_dir = os.path.join(workdir, "checkpoints")
   checkpoint_meta_dir = os.path.join(workdir, "checkpoints-meta", "checkpoint.pth")
-  tf.io.gfile.makedirs(checkpoint_dir)
-  tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
+  #tf.io.gfile.makedirs(checkpoint_dir)
+  #tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
 
   checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_75.pth")
@@ -175,6 +176,12 @@ def train( rank, world_size, address, port, config, workdir):
 
   loss=0
 
+  if rank==0:
+    config_dict=dict(config.items())
+    config_dict["total_batch_size"]=config.training.batch_size*world_size
+    wandb.init(config=config_dict)
+
+
   for epoch in range(initial_epoch, config.training.epochs):
     train_loader.sampler.set_epoch(epoch)
     print('=================================================')
@@ -199,23 +206,37 @@ def train( rank, world_size, address, port, config, workdir):
       for i in range(0, len(images)-1*nimg, nimg):
           # This will fetch up to 50 images, handling cases where less than 50 images remain
           batch_images = images[i:i+nimg]
-
+        
+   
           # Scale and prepare the batch
-          scaled_images = [img * 3500 for img in batch_images]
+          scaled_images = [img * 35 for img in batch_images]
+          # avg_imgs=[torch.sum(imgg)/(320*320) for imgg in scaled_images]
+          # print("avg imags:",avg_imgs)
 
           # Concatenate all the images in the batch along the batch dimension (dim=0)
-          imgs = torch.cat(scaled_images, dim=0)
+          imgs = torch.cat(scaled_images, dim=0)  # 4,1,320,320
+          # Get minimum and maximum values
+          # min_val = imgs.min()
+          # max_val = imgs.max()
+          # print("max min before standardization:",max_val, min_val)
+    
+          # # Normalize the images to [0, 1]
+          # imgs =2*( (imgs - min_val) / (max_val -min_val))-1
+         
+          # print("min,max, mean after:",imgs.min(), imgs.max(), imgs.mean() )
 
-          # Print the shape of the first image and the concatenated batch
-          #print(batch_images[0].shape, imgs.shape)
+          
 
           loss = train_step_fn(state, imgs)
+         
 
 
       if step % config.training.log_freq == 0 and rank==0:
         logging.info("epoch: %d, step: %d, training_loss: %.5e" % (epoch,step, loss.item()))
         global_step = num_data * epoch + step
-        writer.add_scalar("training_loss", scalar_value=loss, global_step=global_step)
+
+        if rank==0:
+          wandb.log({"step": global_step, "loss": loss})
 
       # if step != 0 and step % config.training.snapshot_freq_for_preemption == 0:
       #   state['epoch']=epoch
@@ -239,17 +260,17 @@ def train( rank, world_size, address, port, config, workdir):
         sample = root_sum_of_squares(sample, dim=1).unsqueeze(dim=0)
       ema.restore(score_model.parameters())
       this_sample_dir = os.path.join(sample_dir, "iter_{}".format(epoch))
-      tf.io.gfile.makedirs(this_sample_dir)
+      #tf.io.gfile.makedirs(this_sample_dir)
       nrow = int(np.sqrt(sample.shape[0]))
       image_grid = make_grid(sample, nrow, padding=2)
       sample = np.clip(sample.permute(0, 2, 3, 1).cpu().numpy() * 255, 0, 255).astype(np.uint8)
-      with tf.io.gfile.GFile(
-          os.path.join(this_sample_dir, "sample.np"), "wb") as fout:
-        np.save(fout, sample)
+      # with tf.io.gfile.GFile(
+      #     os.path.join(this_sample_dir, "sample.np"), "wb") as fout:
+      #   np.save(fout, sample)
 
-      with tf.io.gfile.GFile(
-          os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
-        save_image(image_grid, fout)            
+      # with tf.io.gfile.GFile(
+      #     os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
+      #   save_image(image_grid, fout)            
 
     if (epoch>1 and epoch%5==0) and rank==0:
       state['epoch']=epoch
@@ -269,11 +290,11 @@ def train_regression(config, workdir):
 
   # Create directories for experimental logs
   sample_dir = os.path.join(workdir, "samples")
-  tf.io.gfile.makedirs(sample_dir)
+  #tf.io.gfile.makedirs(sample_dir)
 
-  tb_dir = os.path.join(workdir, "tensorboard")
-  tf.io.gfile.makedirs(tb_dir)
-  writer = tensorboard.SummaryWriter(tb_dir)
+  #tb_dir = os.path.join(workdir, "tensorboard")
+  #tf.io.gfile.makedirs(tb_dir)
+  #writer = tensorboard.SummaryWriter(tb_dir)
 
   # Initialize model.
   score_model = mutils.create_model(config)
@@ -284,8 +305,8 @@ def train_regression(config, workdir):
   # Create checkpoints directory
   checkpoint_dir = os.path.join(workdir, "checkpoints")
   checkpoint_meta_dir = os.path.join(workdir, "checkpoints-meta", "checkpoint.pth")
-  tf.io.gfile.makedirs(checkpoint_dir)
-  tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
+  #tf.io.gfile.makedirs(checkpoint_dir)
+  #tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
   # Resume training when intermediate checkpoints are detected
   state = restore_checkpoint(checkpoint_meta_dir, state, config.device)
   initial_step = int(state['step'])
@@ -334,17 +355,17 @@ def train_regression(config, workdir):
       sample = torch.cat((est, eval_batch), dim=0)
       ema.restore(score_model.parameters())
       this_sample_dir = os.path.join(sample_dir, "iter_{}".format(epoch))
-      tf.io.gfile.makedirs(this_sample_dir)
+      #tf.io.gfile.makedirs(this_sample_dir)
       nrow = int(np.sqrt(sample.shape[0]))
       image_grid = make_grid(sample, nrow, padding=2)
       sample = np.clip(sample.permute(0, 2, 3, 1).cpu().numpy() * 255, 0, 255).astype(np.uint8)
-      with tf.io.gfile.GFile(
-          os.path.join(this_sample_dir, "sample.np"), "wb") as fout:
-        np.save(fout, sample)
+      # with tf.io.gfile.GFile(
+      #     os.path.join(this_sample_dir, "sample.np"), "wb") as fout:
+      #   np.save(fout, sample)
 
-      with tf.io.gfile.GFile(
-          os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
-        save_image(image_grid, fout)
+      # with tf.io.gfile.GFile(
+      #     os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
+      #   save_image(image_grid, fout)
 
 
 def evaluate(config,
@@ -360,7 +381,7 @@ def evaluate(config,
   """
   # Create directory to eval_folder
   eval_dir = os.path.join(workdir, eval_folder)
-  tf.io.gfile.makedirs(eval_dir)
+  #tf.io.gfile.makedirs(eval_dir)
 
   # Build data pipeline
   train_ds, eval_ds, _ = datasets.get_dataset(config,
@@ -439,11 +460,11 @@ def evaluate(config,
     # Wait if the target checkpoint doesn't exist yet
     waiting_message_printed = False
     ckpt_filename = os.path.join(checkpoint_dir, "checkpoint_{}.pth".format(ckpt))
-    while not tf.io.gfile.exists(ckpt_filename):
-      if not waiting_message_printed:
-        logging.warning("Waiting for the arrival of checkpoint_%d" % (ckpt,))
-        waiting_message_printed = True
-      time.sleep(60)
+    # while not tf.io.gfile.exists(ckpt_filename):
+    #   if not waiting_message_printed:
+    #     logging.warning("Waiting for the arrival of checkpoint_%d" % (ckpt,))
+    #     waiting_message_printed = True
+    #   time.sleep(60)
 
     # Wait for 2 additional mins in case the file exists but is not ready for reading
     ckpt_path = os.path.join(checkpoint_dir, f'checkpoint_{ckpt}.pth')
@@ -472,10 +493,10 @@ def evaluate(config,
 
       # Save loss values to disk or Google Cloud Storage
       all_losses = np.asarray(all_losses)
-      with tf.io.gfile.GFile(os.path.join(eval_dir, f"ckpt_{ckpt}_loss.npz"), "wb") as fout:
-        io_buffer = io.BytesIO()
-        np.savez_compressed(io_buffer, all_losses=all_losses, mean_loss=all_losses.mean())
-        fout.write(io_buffer.getvalue())
+      # with tf.io.gfile.GFile(os.path.join(eval_dir, f"ckpt_{ckpt}_loss.npz"), "wb") as fout:
+      #   io_buffer = io.BytesIO()
+      #   np.savez_compressed(io_buffer, all_losses=all_losses, mean_loss=all_losses.mean())
+      #   fout.write(io_buffer.getvalue())
 
     # Compute log-likelihoods (bits/dim) if enabled
     if config.eval.enable_bpd:
@@ -494,12 +515,12 @@ def evaluate(config,
             "ckpt: %d, repeat: %d, batch: %d, mean bpd: %6f" % (ckpt, repeat, batch_id, np.mean(np.asarray(bpds))))
           bpd_round_id = batch_id + len(ds_bpd) * repeat
           # Save bits/dim to disk or Google Cloud Storage
-          with tf.io.gfile.GFile(os.path.join(eval_dir,
-                                              f"{config.eval.bpd_dataset}_ckpt_{ckpt}_bpd_{bpd_round_id}.npz"),
-                                 "wb") as fout:
-            io_buffer = io.BytesIO()
-            np.savez_compressed(io_buffer, bpd)
-            fout.write(io_buffer.getvalue())
+          # with tf.io.gfile.GFile(os.path.join(eval_dir,
+          #                                     f"{config.eval.bpd_dataset}_ckpt_{ckpt}_bpd_{bpd_round_id}.npz"),
+          #                        "wb") as fout:
+          #   io_buffer = io.BytesIO()
+          #   np.savez_compressed(io_buffer, bpd)
+          #   fout.write(io_buffer.getvalue())
 
     # Generate samples and compute IS/FID/KID when enabled
     if config.eval.enable_sampling:
@@ -510,17 +531,17 @@ def evaluate(config,
         # Directory to save samples. Different for each host to avoid writing conflicts
         this_sample_dir = os.path.join(
           eval_dir, f"ckpt_{ckpt}")
-        tf.io.gfile.makedirs(this_sample_dir)
+       # tf.io.gfile.makedirs(this_sample_dir)
         samples, n = sampling_fn(score_model)
         samples = np.clip(samples.permute(0, 2, 3, 1).cpu().numpy() * 255., 0, 255).astype(np.uint8)
         samples = samples.reshape(
           (-1, config.data.image_size, config.data.image_size, config.data.num_channels))
         # Write samples to disk or Google Cloud Storage
-        with tf.io.gfile.GFile(
-            os.path.join(this_sample_dir, f"samples_{r}.npz"), "wb") as fout:
-          io_buffer = io.BytesIO()
-          np.savez_compressed(io_buffer, samples=samples)
-          fout.write(io_buffer.getvalue())
+        # with tf.io.gfile.GFile(
+        #     os.path.join(this_sample_dir, f"samples_{r}.npz"), "wb") as fout:
+        #   io_buffer = io.BytesIO()
+        #   np.savez_compressed(io_buffer, samples=samples)
+        #   fout.write(io_buffer.getvalue())
 
         # Force garbage collection before calling TensorFlow code for Inception network
         gc.collect()

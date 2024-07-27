@@ -142,13 +142,14 @@ class NCSNpp(nn.Module):
     if progressive_input != 'none':
       input_pyramid_ch = channels
 
+    
     modules.append(conv3x3(channels, nf))
     hs_c = [nf]
 
     in_ch = nf
-    for i_level in range(num_resolutions):
+    for i_level in range(num_resolutions): #num_resolutions ==4
       # Residual blocks for this resolution
-      for i_block in range(num_res_blocks):
+      for i_block in range(num_res_blocks):  #num_res block ==4
         out_ch = nf * ch_mult[i_level]
         modules.append(ResnetBlock(in_ch=in_ch, out_ch=out_ch))
         in_ch = out_ch
@@ -235,6 +236,7 @@ class NCSNpp(nn.Module):
   def forward(self, x, time_cond):
     # timestep/noise_level embedding; only for continuous training
     modules = self.all_modules
+
     m_idx = 0
     if self.embedding_type == 'fourier':
       # Gaussian Fourier features embeddings.
@@ -267,7 +269,6 @@ class NCSNpp(nn.Module):
     input_pyramid = None
     if self.progressive_input != 'none':
       input_pyramid = x
-
     hs = [modules[m_idx](x)]
     m_idx += 1
     for i_level in range(self.num_resolutions):
@@ -315,7 +316,6 @@ class NCSNpp(nn.Module):
     m_idx += 1
 
     pyramid = None
-
     # Upsampling block
     for i_level in reversed(range(self.num_resolutions)):
       for i_block in range(self.num_res_blocks + 1):
@@ -326,7 +326,6 @@ class NCSNpp(nn.Module):
       if h.shape[-1] in self.attn_resolutions:
         h = modules[m_idx](h)
         m_idx += 1
-
       if self.progressive != 'none':
         if i_level == self.num_resolutions - 1:
           if self.progressive == 'output_skip':
@@ -377,11 +376,8 @@ class NCSNpp(nn.Module):
       m_idx += 1
       h = modules[m_idx](h)
       m_idx += 1
-
     assert m_idx == len(modules)
     if self.config.model.scale_by_sigma:
       used_sigmas = used_sigmas.reshape((x.shape[0], *([1] * len(x.shape[1:]))))
-      # debug
-      # print(f'used_sigmas: {used_sigmas.shape}')
       h = h / used_sigmas
     return h

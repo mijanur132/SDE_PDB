@@ -15,10 +15,9 @@
 
 """Training and evaluation"""
 
+
 import run_lib_fastmri
-print("before app")
 from absl import app
-print("after app")
 from absl import flags
 from ml_collections.config_flags import config_flags
 import logging
@@ -67,6 +66,7 @@ def main(argv):
   if "SLURM_NTASKS" in os.environ:
 
     world_size=int(os.environ["SLURM_NTASKS"])
+    local_rank=int(os.environ["SLURM_LOCALID"])
     rank=int(os.environ["SLURM_PROCID"])
     address=os.environ["MASTER_ADDR"]
     port=os.environ["MASTER_PORT"]
@@ -75,11 +75,12 @@ def main(argv):
   else:
     world_size=1
     rank=0
+    local_rank=0
     address="127.0.0.1"
     port=29500
 
 
-  print(FLAGS.config)
+  #print(FLAGS.config)
 
   if FLAGS.mode == "train" or FLAGS.mode == "train_regression":
     # Create the working directory
@@ -96,9 +97,9 @@ def main(argv):
     # Run the training pipeline
     
     if FLAGS.mode == "train":
-     
-      print(f"train..ws:{world_size}, rank:{rank}")
-      run_lib_fastmri.train(rank,world_size, address,port, FLAGS.config, FLAGS.workdir)
+      
+      print(f"train..ws:{world_size}, rank:{rank}, local_rank:{local_rank}")
+      run_lib_fastmri.train(local_rank, rank,world_size, address,port, FLAGS.config, FLAGS.workdir)
      
 
     elif FLAGS.mode == "train_regression":
@@ -111,5 +112,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-  print("before main is called.......")
   app.run(main)

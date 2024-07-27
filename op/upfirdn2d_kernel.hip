@@ -15,6 +15,8 @@
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime.h>
 
+#include <stdexcept>
+
 static __host__ __device__ __forceinline__ int floor_div(int a, int b) {
   int c = a / b;
 
@@ -213,7 +215,13 @@ torch::Tensor upfirdn2d_op(const torch::Tensor &input,
                            int pad_y0, int pad_y1) {
   int curDevice = -1;
   hipGetDevice(&curDevice);
-  hipStream_t stream = at::hip::getCurrentHIPStreamMasqueradingAsCUDA(curDevice);
+
+  hipError_t error=hipGetLastError();
+  if (error!= hipSuccess){
+    throw std::runtime_error("Cuda error: "+std::string(hipGetErrorString(error)));
+  }
+
+  hipStream_t stream = at::hip::getCurrentHIPStreamMasqueradingAsCUDA();
 
   UpFirDn2DKernelParams p;
 
@@ -240,8 +248,7 @@ torch::Tensor upfirdn2d_op(const torch::Tensor &input,
   p.out_w = (p.in_w * p.up_x + p.pad_x0 + p.pad_x1 - p.kernel_w + p.down_x) /
             p.down_x;
 
-  auto out =
-      at::empty({p.major_dim, p.out_h, p.out_w, p.minor_dim}, x.options());
+  auto out = at::empty({p.major_dim, p.out_h, p.out_w, p.minor_dim}, x.options());
 
   int mode = -1;
 
@@ -311,6 +318,7 @@ torch::Tensor upfirdn2d_op(const torch::Tensor &input,
 
   AT_DISPATCH_FLOATING_TYPES_AND_HALF(x.scalar_type(), "upfirdn2d_cuda", [&] {
     switch (mode) {
+      
     case 1:
      hipLaunchKernelGGL(( upfirdn2d_kernel<scalar_t, 1, 1, 1, 1, 4, 4, 16, 64>)
           , dim3(grid_size), dim3(block_size), 0, stream, out.data_ptr<scalar_t>(),
@@ -365,6 +373,11 @@ torch::Tensor upfirdn2d_op(const torch::Tensor &input,
           k.data_ptr<scalar_t>(), p);
     }
   });
+
+  error=hipGetLastError();
+  if (error!= hipSuccess){
+    throw std::runtime_error("Cuda error:"+std::string(hipGetErrorString(error)));
+  }
 
   return out;
 }

@@ -240,8 +240,8 @@ class ResnetBlockBigGANpp(nn.Module):
     self.out_ch = out_ch
 
   def forward(self, x, temb=None):
-    h = self.act(self.GroupNorm_0(x))
-
+    gn=self.GroupNorm_0(x)
+    h = self.act(gn)
     if self.up:
       if self.fir:
         h = up_or_down_sampling.upsample_2d(h, self.fir_kernel, factor=2)
@@ -264,7 +264,6 @@ class ResnetBlockBigGANpp(nn.Module):
     h = self.act(self.GroupNorm_1(h))
     h = self.Dropout_0(h)
     h = self.Conv_1(h)
-
     if self.in_ch != self.out_ch or self.up or self.down:
       x = self.Conv_2(x)
 

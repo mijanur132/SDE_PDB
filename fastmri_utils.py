@@ -7,10 +7,10 @@ LICENSE file in the root directory of this source tree.
 from typing import List, Optional
 
 import torch
-from packaging import version
+# from packaging import version
 
-if version.parse(torch.__version__) >= version.parse("1.7.0"):
-    import torch.fft  # type: ignore
+# if version.parse(torch.__version__) >= version.parse("1.7.0"):
+#     import torch.fft  # type: ignore
 
 
 def fft2c_old(data: torch.Tensor, norm: str = "ortho") -> torch.Tensor:

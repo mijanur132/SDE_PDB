@@ -76,7 +76,10 @@ def main():
             
             # Apply inverse Fourier Transform to the entire volume
             image_volume = np.fft.ifftn(padded_k_space, axes=(0,1, 2))
-            #print(image_volume.shape)
+            iamge_volume=np.real(image_volume)
+            # Normalize the image volume before splitting
+            image_volume = (image_volume - np.min(image_volume)) / (np.max(image_volume) - np.min(image_volume))
+
 
             # Save the 10th slice after IFFT
             

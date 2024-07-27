@@ -1,21 +1,24 @@
 #!/bin/bash
-#SBATCH -A STF218
+#SBATCH -A BIF151
 #SBATCH -J score_MRI
 #SBATCH -o slurm/%j.out
 #SBATCH -e slurm/%j.err
-#SBATCH -N 2
-#SBATCH -t 00:30:00
+#SBATCH -N 500
+#SBATCH -t 04:00:00
 #SBATCH -S 0
 #SBATCH --ntasks-per-node=8
 #SBATCH --cpus-per-task=8
+##SBATCH -q debug
+
 
 
  
 module purge
 
+
 module load PrgEnv-gnu
 module load gcc/11.2.0
-module load amd-mixed/6.0.0
+module load rocm/6.0.0
 #module load craype-accel-amd-gfx90a
 module load ninja
 
@@ -33,8 +36,8 @@ conda activate /ccs/home/palashmr/packages/miniconda/pyt_env/py310
 #conda activate /ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd
 
 # Print Python executable and version
-which python
-python -V
+# which python
+# python -V
 
 #conda env list
 
@@ -47,7 +50,7 @@ export PATH=/ccs/home/palashmr/packages/miniconda/pyt_env/py310/bin:$PATH
 
 
 # Test TensorFlow import and print its version
-python -c "import tensorflow as tf; print(tf.__version__)"
+# python -c "import tensorflow as tf; print(tf.__version__)"
 
 
 export LD_PRELOAD="/usr/lib64/libcrypto.so /usr/lib64/libssh.so.4 /usr/lib64/libssl.so.1.1"
@@ -60,7 +63,7 @@ export ROCM_HOME=/opt/rocm-6.0.0
 #export PATH=/opt/rocm-6.0.0/bin
 #export ROCM_HOME=/opt/rocm-5.6.0
 
-export NCCL_DEBUG=INFO
+#export NCCL_DEBUG=INFO
 export FI_CXI_ATS=0
 #export LD_LIBRARY_PATH=/opt/rocm-5.6.0/rccl/build:$PWD/aws-ofi-rccl/src/.libs/:/opt/cray/libfabric/1.15.2.0/lib64/:/opt/rocm-5.6.0/lib:/opt/rocm-5.6.0/hip/lib
 export LD_LIBRARY_PATH=/opt/rocm-6.0.0/include/rccl/build:$PWD/aws-ofi-rccl/src/.libs/:/opt/cray/libfabric/1.15.2.0/lib64/:/opt/rocm-6.0.0/lib
@@ -95,7 +98,9 @@ export MASTER_PORT=29500
 export TORCH_EXTENSIONS_DIR="/lustre/orion/stf218/proj-shared/brave/score-MRI/temp/"  #to have a write directory
 export PYTHONUNBUFFERED=1   #for immeideate printing.
 
+export PYTORCH_ROCM_ARCH=gfx90a
 
+#srun bash -c "env"
 srun python main_fastmri.py \
  --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py \
  --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir \
@@ -104,6 +109,7 @@ srun python main_fastmri.py \
 
 
 
+# srun rocgdb -x rocgdb_test.txt python
 
 # Diagnostics to check environment settings
 # echo "PYTHONPATH: $PYTHONPATH"

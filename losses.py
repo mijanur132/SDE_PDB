@@ -26,6 +26,9 @@ import numpy as np
 import time
 
 
+
+
+
 def get_optimizer(config, params):
   """Returns a flax optimizer object based on `config`."""
   if config.optim.optimizer == 'Adam':
@@ -88,7 +91,7 @@ def get_sde_loss_fn(sde, train, reduce_mean=True, continuous=True, likelihood_we
     mean, std = sde.marginal_prob(batch, t)
     perturbed_data = mean + std[:, None, None, None] * z
     score = score_fn(perturbed_data, t)
-
+   
     if not likelihood_weighting:
       losses = torch.square(score * std[:, None, None, None] + z)
       losses = reduce_op(losses.reshape(losses.shape[0], -1), dim=-1)
@@ -99,7 +102,7 @@ def get_sde_loss_fn(sde, train, reduce_mean=True, continuous=True, likelihood_we
 
     loss = torch.mean(losses)
     return loss
-
+  
   return loss_fn
 
 
@@ -191,6 +194,7 @@ def get_step_fn(sde, train, optimize_fn=None, reduce_mean=False, continuous=True
       loss: The average loss value of this state.
     """
     model = state['model']
+
     if train:
       optimizer = state['optimizer']
       optimizer.zero_grad()

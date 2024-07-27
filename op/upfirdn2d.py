@@ -1,43 +1,21 @@
+from collections import abc
 import os
-import sys
 
 import torch
 from torch.nn import functional as F
 from torch.autograd import Function
 from torch.utils.cpp_extension import load
 
-print("Full Python Version:", sys.version)
-print("Python interpreter path:", sys.executable)
 
 module_path = os.path.dirname(__file__)
-# if torch.cuda.is_available():
-#     upfirdn2d_op = load(
-#         "upfirdn2d",
-#         sources=[
-#             os.path.join(module_path, "upfirdn2d.cpp"),
-#             os.path.join(module_path, "upfirdn2d_kernel.cu"),
+upfirdn2d_op = load(
+    "upfirdn2d",
+    sources=[
+        os.path.join(module_path, "upfirdn2d.cpp"),
+        os.path.join(module_path, "upfirdn2d_kernel.cu"),
+    ],
+)
 
-#         ],
-#     )
-
-if torch.cuda.is_available():
-    try:
-        # Dynamically compile and load the upfirdn2d CUDA extension
-        upfirdn2d_op = load(
-            "upfirdn2d",
-            sources=[
-                os.path.join(module_path, "upfirdn2d.cpp"),
-                os.path.join(module_path, "upfirdn2d_kernel.cu"),
-            ],
-            verbose=True  # Enable verbose output to help with debugging
-        )
-        print("Successfully loaded the upfirdn2d CUDA extension.", upfirdn2d_op)
-    except Exception as e:
-        print(f"Failed to load the upfirdn2d CUDA extension: {e}")
-else:
-    print("CUDA is not available. Cannot load the upfirdn2d CUDA extension.")
-
-#os.path.join(module_path, "upfirdn2d_kernel.cu"), #palash
 
 class UpFirDn2dBackward(Function):
     @staticmethod
@@ -123,8 +101,8 @@ class UpFirDn2d(Function):
 
         ctx.save_for_backward(kernel, torch.flip(kernel, [0, 1]))
 
-        out_h = (in_h * up_y + pad_y0 + pad_y1 - kernel_h) // down_y + 1
-        out_w = (in_w * up_x + pad_x0 + pad_x1 - kernel_w) // down_x + 1
+        out_h = (in_h * up_y + pad_y0 + pad_y1 - kernel_h + down_y) // down_y
+        out_w = (in_w * up_x + pad_x0 + pad_x1 - kernel_w + down_x) // down_x
         ctx.out_size = (out_h, out_w)
 
         ctx.up = (up_x, up_y)
@@ -137,13 +115,10 @@ class UpFirDn2d(Function):
         g_pad_y1 = in_h * up_y - out_h * down_y + pad_y0 - up_y + 1
 
         ctx.g_pad = (g_pad_x0, g_pad_x1, g_pad_y0, g_pad_y1)
-        #torch.save(input, 'tensor.pt')
-        #torch.save(kernel, 'kernel.pt')
-        #print(up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0, pad_y1)
+
         out = upfirdn2d_op.upfirdn2d(
             input, kernel, up_x, up_y, down_x, down_y, pad_x0, pad_x1, pad_y0, pad_y1
         )
-        
         # out = out.view(major, out_h, out_w, minor)
         out = out.view(-1, channel, out_h, out_w)
 
@@ -153,31 +128,39 @@ class UpFirDn2d(Function):
     def backward(ctx, grad_output):
         kernel, grad_kernel = ctx.saved_tensors
 
-        grad_input = UpFirDn2dBackward.apply(
-            grad_output,
-            kernel,
-            grad_kernel,
-            ctx.up,
-            ctx.down,
-            ctx.pad,
-            ctx.g_pad,
-            ctx.in_size,
-            ctx.out_size,
-        )
+        grad_input = None
+
+        if ctx.needs_input_grad[0]:
+            grad_input = UpFirDn2dBackward.apply(
+                grad_output,
+                kernel,
+                grad_kernel,
+                ctx.up,
+                ctx.down,
+                ctx.pad,
+                ctx.g_pad,
+                ctx.in_size,
+                ctx.out_size,
+            )
 
         return grad_input, None, None, None, None
 
 
 def upfirdn2d(input, kernel, up=1, down=1, pad=(0, 0)):
+    if not isinstance(up, abc.Iterable):
+        up = (up, up)
+
+    if not isinstance(down, abc.Iterable):
+        down = (down, down)
+
+    if len(pad) == 2:
+        pad = (pad[0], pad[1], pad[0], pad[1])
+
     if input.device.type == "cpu":
-        out = upfirdn2d_native(
-            input, kernel, up, up, down, down, pad[0], pad[1], pad[0], pad[1]
-        )
+        out = upfirdn2d_native(input, kernel, *up, *down, *pad)
 
     else:
-        out = UpFirDn2d.apply(
-            input, kernel, (up, up), (down, down), (pad[0], pad[1], pad[0], pad[1])
-        )
+        out = UpFirDn2d.apply(input, kernel, up, down, pad)
 
     return out
 
@@ -220,7 +203,7 @@ def upfirdn2d_native(
     out = out.permute(0, 2, 3, 1)
     out = out[:, ::down_y, ::down_x, :]
 
-    out_h = (in_h * up_y + pad_y0 + pad_y1 - kernel_h) // down_y + 1
-    out_w = (in_w * up_x + pad_x0 + pad_x1 - kernel_w) // down_x + 1
+    out_h = (in_h * up_y + pad_y0 + pad_y1 - kernel_h + down_y) // down_y
+    out_w = (in_w * up_x + pad_x0 + pad_x1 - kernel_w + down_x) // down_x
 
     return out.view(-1, channel, out_h, out_w)

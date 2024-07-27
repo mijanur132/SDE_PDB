@@ -23,7 +23,7 @@ import torch
 import numpy as np
 import abc
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import functools
 from utils import fft2, ifft2, clear, fft2_m, ifft2_m, root_sum_of_squares
 from tqdm import tqdm
