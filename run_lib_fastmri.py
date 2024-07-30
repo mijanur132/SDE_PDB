@@ -19,6 +19,7 @@ import gc
 import io
 import os
 import time
+import glob
 
 import numpy as np
 
@@ -45,7 +46,7 @@ from torch import nn
 #from torch.utils import tensorboard
 
 from torchvision.utils import make_grid, save_image
-from utils import save_checkpoint, restore_checkpoint, restore_checkpoint_disto_2_no_dist, get_mask, kspace_to_nchw, root_sum_of_squares
+from utils import save_checkpoint, restore_checkpoint, restore_checkpoint_disto_2_no_dist, get_mask, kspace_to_nchw, root_sum_of_squares, save_checkpoint_for_non_ddp
 from utils import restore_checkpoint, get_mask, kspace_to_nchw, root_sum_of_squares
 
 import torch.distributed as dist 
@@ -112,18 +113,69 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
   state = dict(optimizer=optimizer, model=score_model, ema=ema, step=0, epoch=0)
 
   # Create checkpoints directory
-  print(workdir)
+  
+
   checkpoint_dir = os.path.join(workdir, "checkpoints")
   checkpoint_meta_dir = os.path.join(workdir, "checkpoints-meta", "checkpoint.pth")
-  #tf.io.gfile.makedirs(checkpoint_dir)
-  #tf.io.gfile.makedirs(os.path.dirname(checkpoint_meta_dir))
-  # Resume training when intermediate checkpoints are detected
 
-  checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_75.pth")
-  #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
-  state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+  # checkpoint_dir_temp = os.path.join(workdir, "checkpoints", "checkpoint_75.pth")
+  # #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
+  # state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+
+  
+  # List all .pth files in the checkpoint directory
+  checkpoint_files = glob.glob(os.path.join(checkpoint_dir, "*.pth"))
+
+  # Sort files by modification time in descending order
+  checkpoint_files.sort(key=os.path.getmtime, reverse=True)
+
+  # Select the most recent checkpoint file
+
+
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
+
+  if checkpoint_files:
+    latest_checkpoint = checkpoint_files[0]
+    print(f"latest checkpoint:{latest_checkpoint}")
+    checkpoint_dir_temp = os.path.join(workdir, "checkpoints", latest_checkpoint)
+    #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
+    state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+    initial_epoch = int(state['epoch'])+1
+    initial_step = int(state['step'])+1
+  else:
+      latest_checkpoint = None
+      print("No checkpoint files found.")
+
+
+  # if rank==0:
+  #   if checkpoint_files:
+  #       latest_checkpoint = checkpoint_files[0]
+  #       print(f"latest checkpoint:{latest_checkpoint}")
+  #       checkpoint_dir_temp = os.path.join(workdir, "checkpoints", latest_checkpoint)
+  #       #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
+  #       state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
+  #       initial_epoch = int(state['epoch'])+1
+  #   else:
+  #       latest_checkpoint = None
+  #       print("No checkpoint files found.")
+
+  # model_state=state['model'].state_dict()
+  # #optimizer_state=state['optimizer'].state_dict()
+  # ema_state=state['ema'].state_dict()
+  # step=state['step']
+  # epoch=state['epoch']
+
+  # dist.broadcast_object_list([model_state,ema_state,step,epoch], src=0)
+
+  # if rank!=0:
+  #   state['model'].load_state_dict(model_state)
+  #   #state['optimizer'].load_state_dict(state['optimizer'].state_dict())
+  #   state['ema'].load_state_dict(ema_state)
+  #   state['step']=step
+  #   state['epoch']=epoch
+
+
   # print(initial_epoch)
 
   # Build pytorch dataloader for training
@@ -133,8 +185,6 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
   print("num data:",num_data)
 
   #print(train_dl.dataset.data_list), gives the names of all numpy arrays in the train data folder
-
-  
 
   # Create data normalizer and its inverse
   scaler = datasets.get_data_scaler(config)
@@ -172,7 +222,7 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
     sampling_fn = sampling.get_sampling_fn(config, sde, sampling_shape, inverse_scaler, sampling_eps)
 
   # In case there are multiple hosts (e.g., TPU pods), only log to host 0
-  logging.info("Starting training loop at step %d." % (initial_epoch,))
+  logging.info(f"Starting training loop at epoch: {initial_epoch},step:{initial_step}")
 
   loss=0
 
@@ -181,17 +231,22 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
     config_dict["total_batch_size"]=config.training.batch_size*world_size
     wandb.init(config=config_dict)
 
+  if rank==0:
+      save_checkpoint_for_non_ddp(state['model'],os.path.join(checkpoint_dir, f'checkpoint_non_ddp.pth'))
+     
+
+  
 
   for epoch in range(initial_epoch, config.training.epochs):
     train_loader.sampler.set_epoch(epoch)
     print('=================================================')
-    print(f'Epoch: {epoch}')
+    print(f'Epoch:............................................... {epoch}')
     print('=================================================')
 
+
+
     for step, batch in enumerate(train_loader, start=1):
-      
-     # print(batch.shape)
-     # print(batch[0])
+
       batch = scaler(batch.to(device))
       batch=batch.real
       batch=batch.float()
@@ -200,41 +255,17 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
       #print(batch.shape)
       images=torch.unbind(batch,dim=0)
       images = [img.unsqueeze(0) for img in images]
-
-      #print(len(images))
       nimg=4
       for i in range(0, len(images)-1*nimg, nimg):
           # This will fetch up to 50 images, handling cases where less than 50 images remain
           batch_images = images[i:i+nimg]
-        
-   
-          # Scale and prepare the batch
-          scaled_images = [img * 35 for img in batch_images]
-          # avg_imgs=[torch.sum(imgg)/(320*320) for imgg in scaled_images]
-          # print("avg imags:",avg_imgs)
-
           # Concatenate all the images in the batch along the batch dimension (dim=0)
-          imgs = torch.cat(scaled_images, dim=0)  # 4,1,320,320
-          # Get minimum and maximum values
-          # min_val = imgs.min()
-          # max_val = imgs.max()
-          # print("max min before standardization:",max_val, min_val)
-    
-          # # Normalize the images to [0, 1]
-          # imgs =2*( (imgs - min_val) / (max_val -min_val))-1
-         
-          # print("min,max, mean after:",imgs.min(), imgs.max(), imgs.mean() )
-
-          
-
+          imgs = torch.cat(batch_images, dim=0)  # 4,1,320,320
           loss = train_step_fn(state, imgs)
-         
-
-
+          
       if step % config.training.log_freq == 0 and rank==0:
         logging.info("epoch: %d, step: %d, training_loss: %.5e" % (epoch,step, loss.item()))
         global_step = num_data * epoch + step
-
         if rank==0:
           wandb.log({"step": global_step, "loss": loss})
 
@@ -252,7 +283,7 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
 
     # Save a checkpoint for every 10 epoch
          # Generate and save samples for every epoch
-    if (config.training.snapshot_sampling and epoch>1) and (epoch%3 ==0 and rank==0):
+    if (config.training.snapshot_sampling) and (epoch%1 ==0 and rank==0):
       ema.store(score_model.parameters())
       ema.copy_to(score_model.parameters())
       sample, n = sampling_fn(score_model)
@@ -263,20 +294,23 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
       #tf.io.gfile.makedirs(this_sample_dir)
       nrow = int(np.sqrt(sample.shape[0]))
       image_grid = make_grid(sample, nrow, padding=2)
-      sample = np.clip(sample.permute(0, 2, 3, 1).cpu().numpy() * 255, 0, 255).astype(np.uint8)
-      # with tf.io.gfile.GFile(
-      #     os.path.join(this_sample_dir, "sample.np"), "wb") as fout:
-      #   np.save(fout, sample)
+      sample = sample.permute(0, 2, 3, 1).cpu().numpy() #.astype(np.uint8)
+      os.makedirs(this_sample_dir, exist_ok=True)
+      with open(os.path.join(this_sample_dir, "sample.np"), "wb") as fout:
+        np.save(fout, sample)
 
-      # with tf.io.gfile.GFile(
-      #     os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
-      #   save_image(image_grid, fout)            
+      with open(os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
+        save_image(image_grid, fout)            
 
-    if (epoch>1 and epoch%5==0) and rank==0:
+    if (epoch>=0 and epoch%1==0) and rank==0:
       state['epoch']=epoch
-      save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}.pth'), state)
+      state['step']=step
+      save_checkpoint_for_non_ddp(state['model'],os.path.join(checkpoint_dir, f'checkpoint_{epoch}_{step}_non_ddp.pth'))
+      save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}_{step}.pth'), state)
+      print(f'chepoint saved: checkpoint_{epoch}_{step}.pth')
+      initial_step=0
 
- 
+
 
 
 def train_regression(config, workdir):

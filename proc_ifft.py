@@ -76,14 +76,14 @@ def main():
             
             # Apply inverse Fourier Transform to the entire volume
             image_volume = np.fft.ifftn(padded_k_space, axes=(0,1, 2))
-            iamge_volume=np.real(image_volume)
+            image_volume=np.real(image_volume)
             # Normalize the image volume before splitting
-            image_volume = (image_volume - np.min(image_volume)) / (np.max(image_volume) - np.min(image_volume))
-
+            #image_volume = (image_volume - np.min(image_volume)) / (np.max(image_volume) - np.min(image_volume))
+            image_volume=image_volume/image_volume.std()
 
             # Save the 10th slice after IFFT
             
-            plt.imsave(os.path.join(output_directory, f"{filename}_ifft_10th_slice.png"), np.abs(image_volume[10]), cmap='gray')
+            plt.imsave(os.path.join(output_directory, f"{filename}_ifft_10th_slice.png"), np.abs(image_volume[10]*255), cmap='gray')
 
               # Calculate the number of chunks
             num_chunks = image_volume.shape[0] // 40

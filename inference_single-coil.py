@@ -26,7 +26,8 @@ def main():
     N = args.N
     m = args.m
     fname = args.data
-    filename = f'./samples/single-coil/{fname}.npy'
+    #filename = f'./samples/single-coil/{fname}.npy'
+    filename = f'./samples/pdb/{fname}.npy'
 
     print('initaializing...')
     configs = importlib.import_module(f"configs.ve.fastmri_knee_320_ncsnpp_continuous")
@@ -44,7 +45,8 @@ def main():
                     acc_factor=args.acc_factor,
                     center_fraction=args.center_fraction)
 
-    ckpt_filename = f"./weights/checkpoint_95.pth"
+    #ckpt_filename = f"./weights/checkpoint_95.pth"
+    ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/checkpoint_non_ddp.pth"
     sde = VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=N)
 
     config.training.batch_size = batch_size
@@ -66,7 +68,8 @@ def main():
     ema.copy_to(score_model.parameters())
 
     # Specify save directory for saving generated samples
-    save_root = Path(f'./results/single-coil')
+    #save_root = Path(f'./results/single-coil')
+    save_root = Path(f'./results/pdb')
     save_root.mkdir(parents=True, exist_ok=True)
 
     irl_types = ['input', 'recon', 'recon_progress', 'label']

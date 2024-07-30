@@ -264,7 +264,7 @@ def get_pc_sampler(sde, shape, predictor, corrector, inverse_scaler, snr,
 
       time_corrector_tot = 0
       time_predictor_tot = 0
-      for i in range(sde.N):
+      for i in tqdm(range(sde.N)):
         t = timesteps[i]
         vec_t = torch.ones(shape[0], device=t.device) * t
         tic_corrector = time.time()
@@ -275,7 +275,6 @@ def get_pc_sampler(sde, shape, predictor, corrector, inverse_scaler, snr,
         time_predictor_tot += time.time() - tic_predictor
       print(f'Average time for corrector step: {time_corrector_tot / sde.N} sec.')
       print(f'Average time for predictor step: {time_predictor_tot / sde.N} sec.')
-
       return inverse_scaler(x_mean if denoise else x), sde.N * (n_steps + 1)
 
   return pc_sampler
