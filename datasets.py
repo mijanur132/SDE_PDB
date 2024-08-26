@@ -28,20 +28,26 @@ from torch.utils.data.distributed import DistributedSampler
 
 def get_data_scaler(config):
   """Data normalizer. Assume data are always in [0, 1]."""
-  if config.data.centered:
-    # Rescale to [-1, 1]
-    return lambda x: x * 2. - 1.
-  else:
-    return lambda x: x
+  print(f"def get_data_scaler(config) is called.........")
+  # if config.data.centered:
+  #   # Rescale to [-1, 1]
+  #   return lambda x: x * 2. - 1.
+  # else:
+  #   return lambda x: x
+  return lambda x: x
+ 
 
 
 def get_data_inverse_scaler(config):
   """Inverse data normalizer."""
-  if config.data.centered:
-    # Rescale [-1, 1] to [0, 1]
-    return lambda x: (x + 1.) / 2.
-  else:
-    return lambda x: x
+  print(f"def get_data_inverse_scaler(config) is called.........")
+  # if config.data.centered:
+  #   # Rescale [-1, 1] to [0, 1]
+  #   return lambda x: (x + 1.) / 2.
+  # else:
+  #   return lambda x: x
+  return lambda x: x
+
 
 
 def crop_resize(image, resolution):
@@ -246,7 +252,90 @@ class fastmri_knee_infer(Dataset):
     else:
       data = np.load(fname).astype(np.complex64)
     data = np.expand_dims(data, axis=0)
-    return data, str(fname)
+    return data
+
+def custom_collate_fn(batch):
+    # Initialize a list to hold the processed tensors
+    processed_tensors = []
+    for x in batch:  # Each element in the batch is now just a tensor, not a tuple
+        x_tensor = torch.from_numpy(x)
+        trimmed_tensor = x_tensor#[:, 5:-5, :, :]  # This slices out the first and last 5 channels
+        processed_tensors.append(trimmed_tensor)
+    concatenated_tensor = torch.cat(processed_tensors, dim=1)
+
+    return concatenated_tensor
+
+def create_dataloader_ddp(configs, rank,world_size, evaluation=False, sort=True):
+  shuffle = True if not evaluation else False
+  if configs.data.is_multi:
+    train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_multicoil_{configs.data.image_size}_train')
+    val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_{configs.data.image_size}_val', sort=sort)
+  elif configs.data.is_complex:
+    if configs.data.magpha:
+      train_dataset = fastmri_knee_magpha(Path(configs.data.root) / f'knee_complex_magpha_{configs.data.image_size}_train')
+      val_dataset = fastmri_knee_magpha_infer(Path(configs.data.root) / f'knee_complex_magpha_{configs.data.image_size}_val')
+    else:
+      # train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_train', is_complex=True)
+      # val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_val', is_complex=True)
+      train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train', is_complex=True)
+      val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', is_complex=True)
+
+  elif configs.data.khadiza: ##..............................................................pdb data
+    x=Path(configs.data.root)
+    train_dataset = fastmri_knee(x)
+    y=Path(configs.data.val_root)
+    val_dataset = fastmri_knee_infer(x, sort=sort)
+
+  else:
+    x=Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train'
+    train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train')
+    y=Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val'
+    val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', sort=sort)
+  
+  train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank, shuffle=shuffle)
+  val_sampler = DistributedSampler(val_dataset, num_replicas=world_size, rank=rank, shuffle=False) if not evaluation else None
+
+  train_loader = DataLoader(
+    dataset=train_dataset,
+    batch_size=configs.training.batch_size,
+    sampler=train_sampler,
+    collate_fn=custom_collate_fn,
+    drop_last=True,
+    num_workers=1,
+    pin_memory=True
+  )
+
+  val_loader = DataLoader(
+    dataset=val_dataset,
+    batch_size=configs.training.batch_size,
+    collate_fn=custom_collate_fn,
+    sampler=val_sampler,
+    drop_last=True,
+    num_workers=1,
+    pin_memory=True
+  )
+  return train_loader, val_loader
+
+
+
+def create_dataloader_regression(configs, evaluation=False):
+  shuffle = True if not evaluation else False
+  train_dataset = fastmri_knee(Path(configs.root) / f'knee_{configs.image_size}_train')
+  val_dataset = fastmri_knee_infer(Path(configs.root) / f'knee_{configs.image_size}_val')
+
+  train_loader = DataLoader(
+    dataset=train_dataset,
+    batch_size=configs.batch_size,
+    shuffle=shuffle,
+    drop_last=True
+  )
+  val_loader = DataLoader(
+    dataset=val_dataset,
+    batch_size=configs.batch_size,
+    shuffle=False,
+    drop_last=True
+  )
+  return train_loader, val_loader
 
 
 class fastmri_knee_magpha(Dataset):
@@ -317,103 +406,6 @@ def create_dataloader(configs, evaluation=False, sort=True):
     batch_size=configs.training.batch_size,
     # shuffle=False,
     shuffle=True,
-    drop_last=True
-  )
-  return train_loader, val_loader
-
-
-def custom_collate_fn(batch):
-    # Initialize a list to hold the processed tensors
-    processed_tensors = []
-
-    for x in batch:  # Each element in the batch is now just a tensor, not a tuple
-        # Remove the first 5 and last 5 channels from each tensor
-        x_tensor = torch.from_numpy(x)
-        trimmed_tensor = x_tensor[:, 5:-5, :, :]  # This slices out the first and last 5 channels
-
-        # Store the processed tensor
-        processed_tensors.append(trimmed_tensor)
-    
-    # Concatenate all the trimmed tensors along the channel dimension
-    concatenated_tensor = torch.cat(processed_tensors, dim=1)
-
-    return concatenated_tensor
-
-def create_dataloader_ddp(configs, rank,world_size, evaluation=False, sort=True):
-  shuffle = True if not evaluation else False
-  if configs.data.is_multi:
-    train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_multicoil_{configs.data.image_size}_train')
-    val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_{configs.data.image_size}_val', sort=sort)
-  elif configs.data.is_complex:
-    if configs.data.magpha:
-      train_dataset = fastmri_knee_magpha(Path(configs.data.root) / f'knee_complex_magpha_{configs.data.image_size}_train')
-      val_dataset = fastmri_knee_magpha_infer(Path(configs.data.root) / f'knee_complex_magpha_{configs.data.image_size}_val')
-    else:
-      # train_dataset = fastmri_knee(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_train', is_complex=True)
-      # val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'knee_complex_{configs.data.image_size}_val', is_complex=True)
-      train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train', is_complex=True)
-      val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', is_complex=True)
-  elif configs.data.khadiza:
-    x=Path(configs.data.root)
-    print(x)
-    train_dataset = fastmri_knee(x)
-    
-    y=Path(configs.data.val_root)
-    print(y)
-    val_dataset = fastmri_knee_infer(x, sort=sort)
-  
-    
-  else:
-    x=Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train'
-    print(x)
-    train_dataset = fastmri_knee(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_train')
-    
-    y=Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val'
-    print(y)
-    val_dataset = fastmri_knee_infer(Path(configs.data.root) / f'esc_knee_{configs.data.image_size}_val', sort=sort)
-  
-  train_sampler = DistributedSampler(train_dataset, num_replicas=world_size, rank=rank, shuffle=shuffle)
-  val_sampler = DistributedSampler(val_dataset, num_replicas=world_size, rank=rank, shuffle=False) if not evaluation else None
-
-
-
-  train_loader = DataLoader(
-    dataset=train_dataset,
-    batch_size=configs.training.batch_size,
-    sampler=train_sampler,
-    collate_fn=custom_collate_fn,
-    drop_last=True,
-    num_workers=1,
-    pin_memory=True
-  )
-  val_loader = DataLoader(
-    dataset=val_dataset,
-    batch_size=configs.training.batch_size,
-    collate_fn=custom_collate_fn,
-    sampler=val_sampler,
-    drop_last=True,
-    num_workers=1,
-    pin_memory=True
-  )
-  return train_loader, val_loader
-
-
-
-def create_dataloader_regression(configs, evaluation=False):
-  shuffle = True if not evaluation else False
-  train_dataset = fastmri_knee(Path(configs.root) / f'knee_{configs.image_size}_train')
-  val_dataset = fastmri_knee_infer(Path(configs.root) / f'knee_{configs.image_size}_val')
-
-  train_loader = DataLoader(
-    dataset=train_dataset,
-    batch_size=configs.batch_size,
-    shuffle=shuffle,
-    drop_last=True
-  )
-  val_loader = DataLoader(
-    dataset=val_dataset,
-    batch_size=configs.batch_size,
-    shuffle=False,
     drop_last=True
   )
   return train_loader, val_loader

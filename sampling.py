@@ -192,7 +192,7 @@ class LangevinCorrector(Corrector):
       noise = torch.randn_like(x)
       grad_norm = torch.norm(grad.reshape(grad.shape[0], -1), dim=-1).mean()
       noise_norm = torch.norm(noise.reshape(noise.shape[0], -1), dim=-1).mean()
-      step_size = (target_snr * noise_norm / grad_norm) ** 2 * 2 * alpha
+      step_size = (target_snr * noise_norm / grad_norm) ** 2 * 2 * alpha  #it is the epsilon term
       x_mean = x + step_size[:, None, None, None] * grad
       x = x_mean + torch.sqrt(step_size * 2)[:, None, None, None] * noise
 
@@ -264,7 +264,7 @@ def get_pc_sampler(sde, shape, predictor, corrector, inverse_scaler, snr,
 
       time_corrector_tot = 0
       time_predictor_tot = 0
-      for i in tqdm(range(sde.N)):
+      for i in range(sde.N):
         t = timesteps[i]
         vec_t = torch.ones(shape[0], device=t.device) * t
         tic_corrector = time.time()
@@ -353,6 +353,12 @@ def get_pc_fouriercs_fast(sde, predictor, corrector, inverse_scaler, snr,
 
   return pc_fouriercs
 
+
+# def shared_predictor_update_fn(x, t, sde, model, predictor, probability_flow, continuous):
+#   """A wrapper that configures and returns the update function of predictors."""
+#   score_fn = mutils.get_score_fn(sde, model, train=False, continuous=continuous)
+#   predictor_obj = predictor(sde, score_fn, probability_flow)
+#   return predictor_obj.update_fn(x, t)
 
 def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
                         n_steps=1, probability_flow=False, continuous=False,

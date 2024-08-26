@@ -50,7 +50,7 @@ def main():
         mask = torch.from_numpy(np.load(mask_filename))
         mask = mask.view(1, 1, 320, 320)
 
-    ckpt_filename = f"./weights/checkpoint_95.pth"
+    ckpt_filename = f"./checkpoint_95.pth"
     sde = VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=N)
 
     config.training.batch_size = batch_size

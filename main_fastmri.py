@@ -87,6 +87,8 @@ def main(argv):
     #tf.io.gfile.makedirs(FLAGS.workdir)
     # Set logger so that it outputs to both console and file
     # Make logging work for both disk and Google Cloud Storage
+    if not os.path.exists(FLAGS.workdir):
+      os.mkdir(FLAGS.workdir)
     gfile_stream = open(os.path.join(FLAGS.workdir, 'stdout.txt'), 'w')
     handler = logging.StreamHandler(gfile_stream)
     formatter = logging.Formatter('%(levelname)s - %(filename)s - %(asctime)s - %(message)s')

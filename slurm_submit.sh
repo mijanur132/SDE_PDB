@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Initial Job Submission without a dependency
+#job_id=$(sbatch --dependency=afterany:2169915  train_py310_frontier.sh | awk '{print $4}')
 job_id=$(sbatch train_py310_frontier.sh | awk '{print $4}')
 echo "First job submitted with ID $job_id"
 

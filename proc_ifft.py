@@ -30,11 +30,11 @@ def main():
     
             shifted_k_space = np.fft.fftshift(k_space_data, axes=(0,1, 2))
 
-            #print("shifted k space:",shifted_k_space[shifted_k_space>0])
+            print("shifted k space:",shifted_k_space[shifted_k_space>0])
 
             truncated_data=shifted_k_space[:-1,:-1,:-1]
 
-            #print(truncated_data[truncated_data>0])
+            print(truncated_data[truncated_data>0])
 
             target_size = 320
 
@@ -76,7 +76,7 @@ def main():
             
             # Apply inverse Fourier Transform to the entire volume
             image_volume = np.fft.ifftn(padded_k_space, axes=(0,1, 2))
-            image_volume=np.real(image_volume)
+            #image_volume=np.real(image_volume)
             # Normalize the image volume before splitting
             #image_volume = (image_volume - np.min(image_volume)) / (np.max(image_volume) - np.min(image_volume))
             image_volume=image_volume/image_volume.std()

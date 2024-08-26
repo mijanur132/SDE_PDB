@@ -37,6 +37,9 @@ def main():
 
     # Read data
     img = torch.from_numpy(np.load(filename).astype(np.complex64))
+    print("before:",img[0][0])
+    img= img.real
+    print("after:",img[0][0])
     img = img.view(1, 1, 320, 320)
     img = img.to(config.device)
 
@@ -45,8 +48,8 @@ def main():
                     acc_factor=args.acc_factor,
                     center_fraction=args.center_fraction)
 
-    #ckpt_filename = f"./weights/checkpoint_95.pth"
-    ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/checkpoint_non_ddp.pth"
+    #ckpt_filename = f"./checkpoint_95.pth"
+    ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_58_15.pth"
     sde = VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=N)
 
     config.training.batch_size = batch_size
@@ -64,12 +67,17 @@ def main():
     ema = ExponentialMovingAverage(score_model.parameters(),
                                    decay=config.model.ema_rate)
     state = dict(step=0, model=score_model, ema=ema)
-    state = restore_checkpoint(ckpt_filename, state, config.device, skip_sigma=True)
+    
+    checkpt = torch.load(ckpt_filename, map_location=config.device)
+ 
+    state['model'].load_state_dict(checkpt['model'], strict=False)
+    state['ema'].load_state_dict(checkpt['ema'])
     ema.copy_to(score_model.parameters())
 
     # Specify save directory for saving generated samples
     #save_root = Path(f'./results/single-coil')
-    save_root = Path(f'./results/pdb')
+    #save_root = Path(f'./results/pdb')
+    save_root = Path(f'./results/pdb_imag_4m_real/g2d')
     save_root.mkdir(parents=True, exist_ok=True)
 
     irl_types = ['input', 'recon', 'recon_progress', 'label']
@@ -98,7 +106,8 @@ def main():
 
     print(f'Beginning inference')
     tic = time.time()
-    x = pc_fouriercs(score_model, scaler(under_img), mask, Fy=under_kspace)
+    x = pc_fouriercs(score_model, under_img, mask, Fy=under_kspace)
+    #x = pc_fouriercs(score_model, under_img, mask)
     toc = time.time() - tic
     print(f'Time took for recon: {toc} secs.')
 

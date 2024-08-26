@@ -17,6 +17,7 @@
 
 
 import run_lib_infer
+import run_lib_eval
 from absl import app
 from absl import flags
 from ml_collections.config_flags import config_flags
@@ -99,7 +100,8 @@ def main(argv):
     if FLAGS.mode == "train":
       
       print(f"train..ws:{world_size}, rank:{rank}, local_rank:{local_rank}")
-      run_lib_infer.train(local_rank, rank,world_size, address,port, FLAGS.config, FLAGS.workdir)
+      #run_lib_infer.train(local_rank, rank,world_size, address,port, FLAGS.config, FLAGS.workdir)
+      run_lib_eval.train(local_rank, rank,world_size, address,port, FLAGS.config, FLAGS.workdir)
      
 
     elif FLAGS.mode == "train_regression":

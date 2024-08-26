@@ -47,7 +47,8 @@ class Conv2d(nn.Module):
     if self.up:
       x = upsample_conv_2d(x, self.weight, k=self.resample_kernel)
     elif self.down:
-      x = conv_downsample_2d(x, self.weight, k=self.resample_kernel)
+      #x = conv_downsample_2d(x, self.weight, k=self.resample_kernel)
+      x = conv_downsample_2d(x.contiguous(), self.weight, k=self.resample_kernel)
     else:
       x = F.conv2d(x, self.weight, stride=1, padding=self.kernel // 2)
 

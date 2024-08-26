@@ -117,12 +117,10 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
   state = dict(optimizer=optimizer, model=score_model, ema=ema, step=0, epoch=0)
 
 
-  checkpoint="/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/checkpoint_non_ddp.pth"
-  #state=restore_checkpoint_disto_2_no_dist("/home/xrv/score-mri-palash/workdir/checkpoint_75.pth", state, config.device)
-  state_dict= torch.load(checkpoint, map_location=device)
-  state['model'].load_state_dict(state_dict, strict=True)
-  # if skip_sigma:
-  #   checkpt['model'].state_dict().pop('module.sigmas')
+  checkpoint_file="/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/checkpoint_non_ddp.pth"
+  checkpoint= torch.load(checkpoint_file, map_location=device)
+  state['model'].load_state_dict(checkpoint['model'], strict=True)
+  state['ema'].load_state_dict(checkpoint['ema'])
 
   
 
@@ -146,7 +144,7 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
     sde = sde_lib.subVPSDE(beta_min=config.model.beta_min, beta_max=config.model.beta_max, N=config.model.num_scales)
     sampling_eps = 1e-3
   elif config.training.sde.lower() == 'vesde':
-    sde = sde_lib.VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=config.model.num_scales)
+    sde = sde_lib.VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=config.model.num_scales*10)
     sampling_eps = 1e-5
   else:
     raise NotImplementedError(f"SDE {config.training.sde} unknown.")
