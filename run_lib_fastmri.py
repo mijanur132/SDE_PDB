@@ -109,13 +109,14 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
   initial_epoch = int(state['epoch'])
 
   if checkpoint_files:
-    latest_checkpoint = checkpoint_files[0]
-    if rank==0:
-      print(f"latest checkpoint.................:{latest_checkpoint}")
+    #latest_checkpoint = checkpoint_files[0]
+    latest_checkpoint = '/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/checkpoint_58_15.pth'
     checkpoint_dir_temp = os.path.join(workdir, "checkpoints", latest_checkpoint)
     state = restore_checkpoint(checkpoint_dir_temp, state, config.device)
     initial_epoch = int(state['epoch'])+1
     initial_step = int(state['step'])+1
+    if rank==0:
+      print(f"latest checkpoint.................:{latest_checkpoint}")
   else:
       latest_checkpoint = None
       print("No checkpoint files found.")
@@ -169,7 +170,7 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
   if rank==0:
     config_dict=dict(config.items())
     config_dict["total_batch_size"]=config.training.batch_size*world_size
-    wandb.init(config=config_dict)
+    wandb.init( project="COD 43", config=config_dict)
   
   for epoch in range(initial_epoch, config.training.epochs):
     train_loader.sampler.set_epoch(epoch)

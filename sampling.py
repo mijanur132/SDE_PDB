@@ -23,7 +23,7 @@ import torch
 import numpy as np
 import abc
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import functools
 from utils import fft2, ifft2, clear, fft2_m, ifft2_m, root_sum_of_squares
 from tqdm import tqdm
@@ -188,6 +188,8 @@ class LangevinCorrector(Corrector):
     alpha = torch.ones_like(t)
 
     for i in range(n_steps):
+      #x=x.to(torch.float32)
+      #print("x,t",x.dtype,t.dtype)
       grad = score_fn(x, t)
       noise = torch.randn_like(x)
       grad_norm = torch.norm(grad.reshape(grad.shape[0], -1), dim=-1).mean()
@@ -280,6 +282,8 @@ def get_pc_sampler(sde, shape, predictor, corrector, inverse_scaler, snr,
   return pc_sampler
 
 
+
+
 def get_pc_fouriercs_fast(sde, predictor, corrector, inverse_scaler, snr,
                           n_steps=1, probability_flow=False, continuous=False,
                           denoise=True, eps=1e-5, save_progress=False, save_root=None):
@@ -360,9 +364,12 @@ def get_pc_fouriercs_fast(sde, predictor, corrector, inverse_scaler, snr,
 #   predictor_obj = predictor(sde, score_fn, probability_flow)
 #   return predictor_obj.update_fn(x, t)
 
+
+
+
 def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
                         n_steps=1, probability_flow=False, continuous=False,
-                        denoise=True, eps=1e-5):
+                        denoise=True, eps=1e-5, save_root=None, f_name= None):
   # Define predictor & corrector
   predictor_update_fn = functools.partial(shared_predictor_update_fn,
                                           sde=sde,
@@ -376,9 +383,29 @@ def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
                                           snr=snr,
                                           n_steps=n_steps)
 
+
+
+
   def data_fidelity(mask, x, x_mean, Fy):
-      x = ifft2(fft2(x) * (1. - mask) + Fy)
+      x = ifft2(fft2(x) * (1. - mask) + Fy) #fy is under kspace, so we keep this, and add the predicted removed part of x to create new x.
       x_mean = ifft2(fft2(x_mean) * (1. - mask) + Fy)
+      #delity:",x.dtype)
+      return x, x_mean
+
+  # def data_fidelity2(mask, x, x_mean, Fy):
+  #     x_masked=fft2(x).clone()
+  #     x_masked.imag=0
+  #     x = ifft2(x_masked + Fy)
+  #     x_mean_masked=fft2(x_mean).clone()
+  #     x_mean_masked.imag=0
+  #     x_mean = ifft2(x_mean_masked + Fy)
+  #    # print("modi fidelity:",x.dtype)
+  #     return x, x_mean
+
+
+  def data_fidelity2(mask, x, x_mean, Fy):
+      x = ifft2(torch.real(Fy)+1j*torch.imag(fft2(x)))
+      x_mean=  ifft2(torch.real(Fy)+1j*torch.imag(fft2(x_mean)))
       return x, x_mean
 
   def get_fouriercs_update_fn(update_fn):
@@ -397,6 +424,7 @@ def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
         x = x_real + 1j * x_imag
         x_mean = x_real_mean + 1j * x_imag_mean
         x, x_mean = data_fidelity(mask, x, x_mean, Fy)
+        #x, x_mean = data_fidelity2(mask, x, x_mean, Fy)
         return x, x_mean
 
     return fouriercs_update_fn
@@ -413,6 +441,11 @@ def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
         t = timesteps[i]
         x, x_mean = corrector_fouriercs_update_fn(model, data, mask, x, t, Fy=Fy)
         x, x_mean = projector_fouriercs_update_fn(model, data, mask, x, t, Fy=Fy)
+
+        if i>99 and i % 400 == 0:
+            recon = x_mean.squeeze().cpu().detach().numpy()
+            plt.imsave(f'{save_root}/recon_progress/{f_name}_{i}.png', np.abs(recon)*30, cmap='gray')
+
 
       return inverse_scaler(x_mean if denoise else x)
 

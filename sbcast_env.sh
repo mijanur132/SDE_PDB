@@ -1,5 +1,5 @@
-ENV_NAME="py310_frontier"
-ENV_PATH="/lustre/orion/bif151/world-shared/palashmr"
+ENV_NAME="py310_frontier_2"
+ENV_PATH=" "
 
 TAR_FILE=${ENV_NAME}.tar.bz2
 NNODES=${SLURM_NNODES}

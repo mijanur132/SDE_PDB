@@ -332,7 +332,5 @@ def restore_checkpoint_disto_2_no_dist(ckpt_dir, state, device, skip_sigma=False
 
 
 
-
-
 def save_checkpoint(ckpt_dir, state):
   torch.save(state,ckpt_dir)

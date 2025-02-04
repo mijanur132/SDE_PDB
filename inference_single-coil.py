@@ -28,6 +28,9 @@ def main():
     fname = args.data
     #filename = f'./samples/single-coil/{fname}.npy'
     filename = f'./samples/pdb/{fname}.npy'
+    #filename = f'./samples/mesolite/{fname}.npy'   #real space (real valued)
+    #filename=    f"/lustre/orion/stf218/proj-shared/brave/brave_database/COD/320/validation/1001169.cif_0_1.npy"
+
 
     print('initaializing...')
     configs = importlib.import_module(f"configs.ve.fastmri_knee_320_ncsnpp_continuous")
@@ -36,10 +39,8 @@ def main():
     batch_size = 1
 
     # Read data
-    img = torch.from_numpy(np.load(filename).astype(np.complex64))
-    print("before:",img[0][0])
-    img= img.real
-    print("after:",img[0][0])
+    img = torch.from_numpy(np.load(filename))#.astype(np.complex64))
+    print(img.shape)
     img = img.view(1, 1, 320, 320)
     img = img.to(config.device)
 
@@ -48,8 +49,8 @@ def main():
                     acc_factor=args.acc_factor,
                     center_fraction=args.center_fraction)
 
-    #ckpt_filename = f"./checkpoint_95.pth"
     ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_58_15.pth"
+    #ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_5_19.pth"
     sde = VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=N)
 
     config.training.batch_size = batch_size
@@ -76,8 +77,8 @@ def main():
 
     # Specify save directory for saving generated samples
     #save_root = Path(f'./results/single-coil')
-    #save_root = Path(f'./results/pdb')
-    save_root = Path(f'./results/pdb_imag_4m_real/g2d')
+    save_root = Path(f'./results/pdb_real_different_noise')
+    #save_root = Path(f'./results/mesolite/g2d_3rd')
     save_root.mkdir(parents=True, exist_ok=True)
 
     irl_types = ['input', 'recon', 'recon_progress', 'label']
@@ -96,18 +97,20 @@ def main():
                                        n_steps=m,
                                        probability_flow=probability_flow,
                                        continuous=config.training.continuous,
-                                       denoise=True)
+                                       denoise=True, save_root=save_root, f_name =f'{fname}_{args.acc_factor}')
     # fft
-    kspace = fft2(img)
+    kspace = fft2(img)   #reciprocal space
 
-    # undersampling
-    under_kspace = kspace * mask
-    under_img = ifft2(under_kspace)
+    under_kspace = kspace * mask  #multiplicative mask, 1 means present
+
+    # r=torch.real(kspace).float()
+    # under_kspace=torch.complex(r,torch.zeros_like(r)) #reciprocal, replace imaginary part with zeros
+
+    under_img = ifft2(under_kspace) #back to real space
 
     print(f'Beginning inference')
     tic = time.time()
     x = pc_fouriercs(score_model, under_img, mask, Fy=under_kspace)
-    #x = pc_fouriercs(score_model, under_img, mask)
     toc = time.time() - tic
     print(f'Time took for recon: {toc} secs.')
 
@@ -118,29 +121,29 @@ def main():
     label = img.squeeze().cpu().detach().numpy()
     mask_sv = mask.squeeze().cpu().detach().numpy()
 
-    np.save(str(save_root / 'input' / fname) + '.npy', input)
-    np.save(str(save_root / 'input' / (fname + '_mask')) + '.npy', mask_sv)
+    np.save(f'{save_root}/input/{fname}_{args.acc_factor}.npy', input)
+    np.save(f'{save_root}/input/{fname}_{args.acc_factor}_mask.npy', mask_sv)
     np.save(str(save_root / 'label' / fname) + '.npy', label)
-    plt.imsave(str(save_root / 'input' / fname) + '.png', np.abs(input), cmap='gray')
-    plt.imsave(str(save_root / 'label' / fname) + '.png', np.abs(label), cmap='gray')
+    plt.imsave(f'{save_root}/input/{fname}_{args.acc_factor}.png', np.abs(input)*50, cmap='gray')
+    plt.imsave(f'{save_root}/input/{fname}_{args.acc_factor}_mask.png', np.abs(mask_sv), cmap='gray')
 
     recon = x.squeeze().cpu().detach().numpy()
-    np.save(str(save_root / 'recon' / fname) + '.npy', recon)
-    plt.imsave(str(save_root / 'recon' / fname) + '.png', np.abs(recon), cmap='gray')
+    np.save(f'{save_root}/recon/{fname}_{args.acc_factor}.npy', recon)
+    plt.imsave(f'{save_root}/recon/{fname}_{args.acc_factor}.png', np.abs(recon)*30, cmap='gray')
 
 
 def create_argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, help='which data to use for reconstruction', required=True)
     parser.add_argument('--mask_type', type=str, help='which mask to use for retrospective undersampling.'
-                                                      '(NOTE) only used for retrospective model!', default='gaussian1d',
+                                                      '(NOTE) only used for retrospective model!', default='gaussian2d',
                         choices=['gaussian1d', 'uniform1d', 'gaussian2d'])
     parser.add_argument('--acc_factor', type=int, help='Acceleration factor for Fourier undersampling.'
                                                        '(NOTE) only used for retrospective model!', default=4)
     parser.add_argument('--center_fraction', type=float, help='Fraction of ACS region to keep.'
                                                        '(NOTE) only used for retrospective model!', default=0.08)
     parser.add_argument('--save_dir', default='./results')
-    parser.add_argument('--N', type=int, help='Number of iterations for score-POCS sampling', default=2000)
+    parser.add_argument('--N', type=int, help='Number of iterations for score-POCS sampling', default=1500)
     parser.add_argument('--m', type=int, help='Number of corrector step per single predictor step.'
                                               'It is advised not to change this default value.', default=1)
     return parser
@@ -148,3 +151,10 @@ def create_argparser():
 
 if __name__ == "__main__":
     main()
+
+#for slurm: sbatch train_frontier.slurm <acc_factor>
+#acc factor 1 to inf, larger mean more noise
+#For terminal: train_script.sh
+#for pdb checkpoint:     ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_58_15.pth"
+#mesolite   #ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_5_19.pth"
+#change data location in config file

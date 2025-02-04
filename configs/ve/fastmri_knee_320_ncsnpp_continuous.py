@@ -41,6 +41,8 @@ def get_config():
   #data.val_root='/lustre/orion/stf218/proj-shared/brave/brave_database/fastMRI/singlecoil_train'
   data.root='/lustre/orion/stf218/proj-shared/brave/brave_database/pdb/10-20-std'
   data.val_root='/lustre/orion/stf218/proj-shared/brave/brave_database/pdb/10-20-std-val'
+  #data.root="/lustre/orion/stf218/proj-shared/brave/brave_database/COD/320/train"
+  #data.val_root="/lustre/orion/stf218/proj-shared/brave/brave_database/COD/320/validation"
   data.image_size = 320
   data.is_multi = False
   data.is_complex = False

@@ -148,7 +148,8 @@ def get_score_fn(sde, model, train=False, continuous=False):
       labels = sde.T - t
       labels *= sde.N - 1
       labels = torch.round(labels).long()
-
+   # print("x,labels",x.dtype,labels.dtype, x.shape, labels.shape)
+    x=x.to(torch.float32)
     score = model_fn(x, labels)
     return score
 

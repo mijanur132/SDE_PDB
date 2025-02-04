@@ -52,6 +52,7 @@ class NCSNpp(nn.Module):
     resamp_with_conv = config.model.resamp_with_conv
     self.num_resolutions = num_resolutions = len(ch_mult)
     self.all_resolutions = all_resolutions = [config.data.image_size // (2 ** i) for i in range(num_resolutions)]
+  
 
     self.conditional = conditional = config.model.conditional  # noise-conditional
     fir = config.model.fir
@@ -188,7 +189,7 @@ class NCSNpp(nn.Module):
         modules.append(ResnetBlock(in_ch=in_ch + hs_c.pop(),
                                    out_ch=out_ch))
         in_ch = out_ch
-
+     
       if all_resolutions[i_level] in attn_resolutions:
         modules.append(AttnBlock(channels=in_ch))
 
@@ -272,6 +273,7 @@ class NCSNpp(nn.Module):
     hs = [modules[m_idx](x)]
     m_idx += 1
     for i_level in range(self.num_resolutions):
+      #print("self.all resolutions:",self.all_resolutions)
       # Residual blocks for this resolution
       for i_block in range(self.num_res_blocks):
         h = modules[m_idx](hs[-1], temb)
@@ -320,6 +322,7 @@ class NCSNpp(nn.Module):
     for i_level in reversed(range(self.num_resolutions)):
       for i_block in range(self.num_res_blocks + 1):
         tmp = hs.pop()
+        #print("h:, tmp.shape",h.shape, tmp.shape)
         h = modules[m_idx](torch.cat([h, tmp], dim=1), temb)
         m_idx += 1
 
