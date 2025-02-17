@@ -23,19 +23,12 @@ def main():
     # Process each .npy file in the input directory
     for filename in os.listdir(input_directory):
         if filename.endswith(".npy"):
-    
-
             data_path = os.path.join(input_directory, filename)
             k_space_data = np.load(data_path)
-    
             shifted_k_space = np.fft.fftshift(k_space_data, axes=(0,1, 2))
-
             print("shifted k space:",shifted_k_space[shifted_k_space>0])
-
             truncated_data=shifted_k_space[:-1,:-1,:-1]
-
             print(truncated_data[truncated_data>0])
-
             target_size = 320
 
             #  print(f"Loaded {filename} with shape: {k_space_data.shape}")
@@ -75,7 +68,7 @@ def main():
     
             
             # Apply inverse Fourier Transform to the entire volume
-            image_volume = np.fft.ifftn(padded_k_space, axes=(0,1, 2))
+            image_volume = np.fft.ifftn(padded_k_space, axes=(0,1, 2))  #real space
             #image_volume=np.real(image_volume)
             # Normalize the image volume before splitting
             #image_volume = (image_volume - np.min(image_volume)) / (np.max(image_volume) - np.min(image_volume))
@@ -91,7 +84,7 @@ def main():
                 num_chunks += 1
 
             # Split the volume into chunks and save each one
-            chunks = np.array_split(image_volume, num_chunks, axis=0)
+            chunks = np.array_split(image_volume, num_chunks, axis=0)  #real space
             for i, chunk in enumerate(chunks):
                 if chunk.size == 0:
                     print("chunk empty...")

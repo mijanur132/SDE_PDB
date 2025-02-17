@@ -27,7 +27,8 @@ def main():
     m = args.m
     fname = args.data
     #filename = f'./samples/single-coil/{fname}.npy'
-    filename = f'./samples/pdb/{fname}.npy'
+    #filename = f'./samples/pdb/{fname}.npy'
+    filename = f'./samples/n-3pol/{fname}.npy'
 
     print('initaializing...')
     configs = importlib.import_module(f"configs.ve.fastmri_knee_320_ncsnpp_continuous")
@@ -38,7 +39,7 @@ def main():
     # Read data
     img = torch.from_numpy(np.load(filename).astype(np.complex64))
     print("before:",img[0][0])
-    img= img.real
+    img= img.real  #real #already real; I have original, noisy and cleaned...
     print("after:",img[0][0])
     img = img.view(1, 1, 320, 320)
     img = img.to(config.device)
@@ -49,7 +50,7 @@ def main():
                     center_fraction=args.center_fraction)
 
     #ckpt_filename = f"./checkpoint_95.pth"
-    ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_58_15.pth"
+    ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_238_249.pth"
     sde = VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=N)
 
     config.training.batch_size = batch_size

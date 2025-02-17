@@ -189,7 +189,7 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
       nimg=4
       for i in range(0, len(images)-1*nimg, nimg):
           batch_images = images[i:i+nimg]
-          imgs = torch.cat(batch_images, dim=0)  # 4,1,320,320
+          imgs = torch.cat(batch_images, dim=0)[:,:,:,0:320]  # 4,1,320,320
           loss = train_step_fn(state, imgs)
       global_step = num_data * epoch + step
       if step % config.training.log_freq == 0 and rank==0:
@@ -197,7 +197,7 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
         if rank==0:
           wandb.log({"step": global_step, "loss": loss})
       
-      if step % (config.training.eval_freq)== 0:
+      if step % (config.training.eval_freq*5)== 0:
         #eval_batch = scaler(next(iter(eval_loader)).to(device))
         eval_batch = next(iter(eval_loader)).to(device)
         eval_batch=eval_batch.real
@@ -210,8 +210,9 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
         if rank==0:
             logging.info("epoch:%d, step: %d, eval_loss: %.5e" % (epoch,step, eval_loss.item()))
             wandb.log({"step": global_step, "eval_loss": eval_loss.item()})
-
-    if (config.training.snapshot_sampling) and (epoch%1 ==0 and rank==0):
+    
+    want_sample = 0
+    if want_sample and (config.training.snapshot_sampling) and (epoch%1 ==0 and rank==0):
       ema.store(score_model.parameters())
       ema.copy_to(score_model.parameters())
       sample, n = sampling_fn(score_model)
@@ -230,7 +231,7 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
       with open(os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
         save_image(image_grid, fout)            
 
-    if (epoch>=0 and epoch%1==0) and rank==0:
+    if (epoch>=0 and epoch%2==0) and rank==0:
       state['epoch']=epoch
       state['step']=step
       save_checkpoint_for_non_ddp(os.path.join(checkpoint_dir, f'non_ddp_checkpoint_{epoch}_{step}.pth'),state)
