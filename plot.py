@@ -1,7 +1,7 @@
 import re
 import sys
 import os
-import pandas as pd
+# import pandas as pd
 import matplotlib.pyplot as plt
 
 def read_and_process_log(file_path):
@@ -57,11 +57,55 @@ def plot_losses(epochs, losses, output_path, window_size=10):
     plt.savefig(output_path)
     plt.show()
 
+def plot_loss_noise():
+
+    labels = [0,2, 4, 6, 8, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100]
+    loss_cleared = [1,1, 1, 0.99, 0.98, 0.97, 0.92, 0.89, 0.85, 0.83, 0.81, 0.79, 0.71, 0.48, 0.23, 0.21, 0.21, 0.21]
+    loss2noisy_sample = [1,0.98, 0.81, 0.67, 0.57, 0.48, 0.38, 0.34, 0.25, 0.28, 0.26, 0.23, 0.16, 0.15, 0.13, 0.12, 0.11, 0.10]
+
+    # Create the plot
+    plt.figure(figsize=(12, 8))
+    plt.plot(labels, loss_cleared, marker='o', label='Cleaned Sample', linestyle='-', linewidth='4')
+    plt.plot(labels, loss2noisy_sample, marker='s', label='Noisy Sample', linestyle='--', linewidth='4')
+
+    # Adding title and labels
+    #plt.title('Comparing Cleaned and Noisy Samples with Original Samples',fontsize=25, pad=20)
+
+
+    plt.xticks( fontsize = 20, fontweight ='bold')  # Set custom ticks and labels
+
+    plt.yticks(fontsize =20,fontweight='bold')
+    # Adding title and labels
+    #plt.title('Training Loss vs Steps', fontsize=25, fontweight = 'bold')
+    plt.xlabel('Noise Level',fontsize=25, fontweight = 'bold')
+    plt.ylabel('SSIM', fontsize=25, fontweight = 'bold')
+    plt.ylim(0, 1.05)  # Set the maximum y value to 2
+
+    # Adding legend
+    plt.legend( fontsize='25', loc='upper right')
+    plt.grid(visible= 'True', which= 'both', linestyle='dotted', linewidth=1 )
+    plt.tight_layout()
+
+    ax = plt.gca()
+
+    # Set spine width
+    spine_width = 4  # Define the width of the border
+    for spine in ax.spines.values():
+        spine.set_linewidth(spine_width)
+
+
+
+    # Show the plot
+    plt.savefig("/lustre/orion/stf218/proj-shared/brave/score-MRI/results/n-3pol/noise_plot.png")
+
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python script.py <path_to_log_file>")
-        sys.exit(1)
-    
+    # if len(sys.argv) < 2:
+    #     print("Usage: python script.py <path_to_log_file>")
+    #     sys.exit(1)
+
+    plot_loss_noise()
     file_path = sys.argv[1]
     epochs, steps, losses = read_and_process_log(file_path)
     

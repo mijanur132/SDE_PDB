@@ -107,8 +107,8 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
   checkpoint_files.sort(key=os.path.getmtime, reverse=True)
   initial_step = int(state['step'])
   initial_epoch = int(state['epoch'])
-
-  if checkpoint_files:
+  want_chkpt = 0
+  if checkpoint_files and want_chkpt:
     #latest_checkpoint = checkpoint_files[0]
     latest_checkpoint = '/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/checkpoint_58_15.pth'
     checkpoint_dir_temp = os.path.join(workdir, "checkpoints", latest_checkpoint)
@@ -231,11 +231,11 @@ def train( local_rank, rank, world_size, address, port, config, workdir):
       with open(os.path.join(this_sample_dir, "sample.png"), "wb") as fout:
         save_image(image_grid, fout)            
 
-    if (epoch>=0 and epoch%1==0) and rank==0:
+    if (epoch>=0 and epoch%2==0) and rank==0:
       state['epoch']=epoch
       state['step']=step
       save_checkpoint_for_non_ddp(os.path.join(checkpoint_dir, f'non_ddp_checkpoint_{epoch}_{step}.pth'),state)
-      save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_{epoch}_{step}.pth'), state)
+      save_checkpoint(os.path.join(checkpoint_dir, f'checkpoint_n3pol_{epoch}_{step}.pth'), state)
       print(f'chepoint saved: checkpoint_{epoch}_{step}.pth')
       initial_step=0
 

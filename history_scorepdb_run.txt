@@ -1,0 +1,136 @@
+
+   13  sbatch --dependency --help
+   14  sbatch --help
+   15  sbatch --dependency=afterok:2135020  train_py310_frontier.sh 
+   16  sbatch --dependency=afterok:2136796  train_py310_frontier.sh 
+   17  ls -1| wc -l
+   18 
+   27  pushd /lustre/orion/stf218/proj-shared/brave/score-MRI
+   2
+   30  python inference_single-coil.py --data 1IDU.pdb_1_complex_10 --mask_type 'gaussian2d'
+
+   31  module load PrgEnv-gnu
+   32  module load gcc/11.2.0
+   33  module load rocm/6.0.0
+   34  export MIOPEN_USER_DB_PATH="/tmp/cache"
+   35  export MIOPEN_CUSTOM_CACHE_DIR=${MIOPEN_USER_DB_PATH}
+   36  rm -rf ${MIOPEN_USER_DB_PATH}
+   37  mkdir -p ${MIOPEN_USER_DB_PATH}
+
+   38  python inference_single-coil.py --data 1IDU.pdb_1_complex_10 --mask_type 'gaussian2d'
+   39  
+ 
+   94  python proc_ifft.py /lustre/orion/stf218/proj-shared/brave/brave_database/mesolite_infer  /lustre/orion/stf218/proj-shared/brave/brave_database/mesolite_infer/processed
+   95  python proc_ifft.py /lustre/orion/stf218/proj-shared/brave/brave_database/mesolite_infer  /lustre/orion/stf218/proj-shared/brave/brave_database/mesolite_infer/processed/temp
+   96  python np2rgbImg.py 
+   97  python inference_single-coil.py --data mesolite.cif_0_10th --mask_type 'gaussian2d'
+
+ 
+  108  . run_inference.sh 
+  109  python inference_single-coil.py --data mesolite.cif_0_10th --mask_type 'gaussian2d'
+ 
+  111  conda activate /lustre/orion/stf218/world-shared/palashmr/py310_frontier
+  112  python inference_single-coil.py --data mesolite.cif_0_10th --mask_type 'gaussian2d'
+
+  115  python inference_single-coil.py --data mesolite.cif_0_10th --mask_type 'gaussian2d'
+  
+  132  export http_proxy=http://proxy.ccs.ornl.gov:3128/
+  133  export https_proxy=http://proxy.ccs.ornl.gov:3128/
+
+
+  205  python np2rgbImg.py 
+  206  python inference_single-coil.py --data mesolite.cif_0_10th --mask_type 'gaussian2d'
+  20
+  220  tar -xvf 10.13139_OLCF_1510313.tar 
+
+  236  conda activate  /lustre/orion/stf218/world-shared/palashmr/py310_frontier
+  237  python inference_single-coil.py --data mesolite2.cif_0_10th --mask_type 'gaussian2d'
+  
+
+  417  git add .
+  418  git commit -m "TheOriginalCode_from_PhAI_paper"
+  419  git remote add origin https://code.ornl.gov/dnp-computational-project/palash_ph_ai.git
+  420  git branch -M main
+  421  git push -uf origin main
+  422  ssh -T git@code.ornl.gov:dnp-computational-project/palash_ph_ai.git
+  423  ssh -T git@code.ornl.gov
+  424  git push -uf origin main
+  425  ssh -T git@code.ornl.gov
+  426  git remove -v
+  427  git remote -v
+  428  git push
+  429  git push --set-upstream origin main
+  430  ssh -vT git@code.ornl.gov
+  431  git remote -v
+  432  git remote set-url origin git@code.ornl.gov:dnp-computational-project/palash_ph_ai.git
+  433  git remote -v
+  434  git push --set-upstream origin main
+  435  git push
+  436  git push --set-upstream origin main
+  437  git pull origin main
+  438  git push --force-with-lease origin main
+  439  git pull origin main
+  440  git config pull.rebase false
+  441  git pull origin main
+  442  git push --force-with-lease origin main
+  443  python phasing_train_neuralnetwork.py 
+  444
+
+  447  kill -9 %
+  448  python phasing_train_neuralnetwork.py 
+
+  451  python proc_ifft.py /lustre/orion/bif151/world-shared/kbegam/cod-43/npy-cod43 /lustre/orion/stf218/proj-shared/brave/brave_database/COD
+ 
+  507  export TORCHDYNAMO_DISABLE=1
+
+
+  570  . start.sh 
+
+  610  salloc -A bif151 -t 00:10:00 -N 1 -qdebug
+  612  salloc -A bif151 -t 00:10:00 -N 1 -qdebug
+
+  619  python phasing_train_neuralnetwork.py  | tee output.txt
+
+  621  python phasing_train_neuralnetwork.py  | tee output.txt
+
+  626  sstat -u palashmr
+  627  sacct -u palashmr
+  
+  653  salloc -A bif151 -t 00:30:00 -N 1 -qdebug
+ 
+  662  . train_fastmri_knee_bash.sh 
+ 
+  665  sbatch train_py310_frontier.sh 
+  
+  671  python proc_ifft.py /lustre/orion/bif151/world-shared/kbegam/cod-43/npy-cod43 /lustre/orion/stf218/proj-shared/brave/brave_database/COD/train
+  
+ 
+  694  python main_fastmri.py  --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py  --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir  --mode='train'  --workdir=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir
+  697  python main_fastmri.py  --config=/lustre/orion/stf218/proj-shared/brave/score-MRI/configs/ve/fastmri_knee_320_ncsnpp_continuous.py  --eval_folder=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir  --mode='train'  --workdir=/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir
+
+  701  squeue -u palashmr
+  702  tail -f /lustre/orion/stf218/proj-shared/brave/score-MRI/slurm/*5374*
+  703  squeue -u palashmr
+  704  scancel 2525374
+  705  squeue -u palashmr
+  706  salloc -A bif151 -t 00:40:00 -N 1 -qdebug
+
+  754  module list
+  755  . train_fastmri_knee_bash.sh 
+ 
+  769  conda activate   /lustre/orion/stf218/world-shared/palashmr/py310_frontier
+  770  python proc_ifft.py  /lustre/orion/bif151/world-shared/kbegam/cod-43/npy-cod43   /lustre/orion/stf218/proj-shared/brave/brave_database/COD/train
+ 
+  788  . train_fastmri_knee_bash.sh 
+ 
+  856  . train_fastmri_knee_bash.sh 
+
+  871  export PATH=/lustre/orion/stf218/world-shared/palashmr/py310_frontier/bin/wandb:$PATH
+
+  890  export PATH=$(echo $PATH | sed 's|:/ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd/bin||g; s|^/ccs/home/palashmr/packages/miniconda/pyt_env/score-mri-amd/bin:||g')
+  
+  896  pip install absl-py
+  
+  905  sbatch train_py310_frontier.sh 
+  
+  998  . start.sh 

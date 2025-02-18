@@ -27,7 +27,7 @@ def main():
     m = args.m
     fname = args.data
     #filename = f'./samples/single-coil/{fname}.npy'
-    filename = f'./samples/pdb/{fname}.npy'
+    filename = f'./samples/n-3pol/{fname}.npy'
     #filename = f'./samples/mesolite/{fname}.npy'   #real space (real valued)
     #filename=    f"/lustre/orion/stf218/proj-shared/brave/brave_database/COD/320/validation/1001169.cif_0_1.npy"
 
@@ -39,7 +39,7 @@ def main():
     batch_size = 1
 
     # Read data
-    img = torch.from_numpy(np.load(filename))#.astype(np.complex64))
+    img = torch.from_numpy(np.load(filename))[0]#.astype(np.complex64))
     print(img.shape)
     img = img.view(1, 1, 320, 320)
     img = img.to(config.device)
@@ -49,7 +49,7 @@ def main():
                     acc_factor=args.acc_factor,
                     center_fraction=args.center_fraction)
 
-    ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_58_15.pth"
+    ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_238_249.pth"
     #ckpt_filename=f"/lustre/orion/stf218/proj-shared/brave/score-MRI/workdir/checkpoints/non_ddp_checkpoint_5_19.pth"
     sde = VESDE(sigma_min=config.model.sigma_min, sigma_max=config.model.sigma_max, N=N)
 
@@ -77,7 +77,7 @@ def main():
 
     # Specify save directory for saving generated samples
     #save_root = Path(f'./results/single-coil')
-    save_root = Path(f'./results/pdb_real_different_noise')
+    save_root = Path(f'./results/n-3pol')
     #save_root = Path(f'./results/mesolite/g2d_3rd')
     save_root.mkdir(parents=True, exist_ok=True)
 
@@ -107,7 +107,7 @@ def main():
     # under_kspace=torch.complex(r,torch.zeros_like(r)) #reciprocal, replace imaginary part with zeros
 
     under_img = ifft2(under_kspace) #back to real space
-
+    
     print(f'Beginning inference')
     tic = time.time()
     x = pc_fouriercs(score_model, under_img, mask, Fy=under_kspace)
@@ -124,6 +124,7 @@ def main():
     np.save(f'{save_root}/input/{fname}_{args.acc_factor}.npy', input)
     np.save(f'{save_root}/input/{fname}_{args.acc_factor}_mask.npy', mask_sv)
     np.save(str(save_root / 'label' / fname) + '.npy', label)
+    plt.imsave(f'{save_root}/label/{fname}.png',np.abs(label)*30, cmap='gray')
     plt.imsave(f'{save_root}/input/{fname}_{args.acc_factor}.png', np.abs(input)*50, cmap='gray')
     plt.imsave(f'{save_root}/input/{fname}_{args.acc_factor}_mask.png', np.abs(mask_sv), cmap='gray')
 
