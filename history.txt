@@ -71,7 +71,7 @@
   126  python
   127  conda env list
   128  conda activate  /lustre/orion/stf218/proj-shared/brave/dino_modified/dino_env
-  129  conda list | grep rocminfo
+  129  conda list | grep /lustre/orion/stf006/world-shared/kbegam/code/data-phai/PhAI.zipinfo
   130  rocminfo
   131  amd-smi
   132  rocmsmi

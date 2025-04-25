@@ -14,6 +14,7 @@ from models.ema import ExponentialMovingAverage
 import matplotlib.pyplot as plt
 import importlib
 import argparse
+import sys
 
 
 def main():
@@ -25,13 +26,20 @@ def main():
     args = create_argparser().parse_args()
     N = args.N
     m = args.m
-    fname = args.data
+    slice_idx = args.slice_idx#+60
+    print("sys.argv:", sys.argv, slice_idx)
+
+    fname ='1C57_honly.mtz_0_total' #args.data
     #filename = f'./samples/single-coil/{fname}.npy'
-    filename = f'./samples/n-3pol/{fname}.npy'
+    #filename = f'./samples/n-3pol/{fname}.npy'
+    #filename = f'./samples/protonated/{fname}.npy'
     #filename = f'./samples/mesolite/{fname}.npy'   #real space (real valued)
     #filename=    f"/lustre/orion/stf218/proj-shared/brave/brave_database/COD/320/validation/1001169.cif_0_1.npy"
-
-
+    #filename_plus = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_plus.mtz_0_sym_5.npy'
+    #filename_ref = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_total.npy'
+    #filename_minus = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_minus.mtz_0_sym_5.npy'
+    filename_ref = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_total.npy'
+  
     print('initaializing...')
     configs = importlib.import_module(f"configs.ve.fastmri_knee_320_ncsnpp_continuous")
     config = configs.get_config()
@@ -39,8 +47,22 @@ def main():
     batch_size = 1
 
     # Read data
-    img = torch.from_numpy(np.load(filename))[0]#.astype(np.complex64))
-    print(img.shape)
+    option = 1
+    if option==1:
+        filename = filename_ref
+    else:
+        raise ValueError
+        #filename = filename_ref #implement random alternative signage approach 2
+    imgx = torch.from_numpy(np.load(filename))#.astype(np.complex64)
+    imgx = torch.fft.ifft2(torch.fft.fftn(imgx))#complex
+    #previoulsy ksp to 3d fftn to image
+    #now we first reverse back to ksp and do 2d ifft2 to back to image, 
+    
+    # for i in range(len(imgx)):
+        # if i != 5:
+        #     continue
+    i = slice_idx
+    img = imgx[slice_idx]
     img = img.view(1, 1, 320, 320)
     img = img.to(config.device)
 
@@ -66,18 +88,18 @@ def main():
     # create model and load checkpoint
     score_model = mutils.create_model(config)
     ema = ExponentialMovingAverage(score_model.parameters(),
-                                   decay=config.model.ema_rate)
+                                decay=config.model.ema_rate)
     state = dict(step=0, model=score_model, ema=ema)
     
     checkpt = torch.load(ckpt_filename, map_location=config.device)
- 
+
     state['model'].load_state_dict(checkpt['model'], strict=False)
     state['ema'].load_state_dict(checkpt['ema'])
     ema.copy_to(score_model.parameters())
 
     # Specify save directory for saving generated samples
     #save_root = Path(f'./results/single-coil')
-    save_root = Path(f'./results/n-3pol')
+    save_root = Path(f'./results/dnp/vanila0_{args.acc_factor}')
     #save_root = Path(f'./results/mesolite/g2d_3rd')
     save_root.mkdir(parents=True, exist_ok=True)
 
@@ -91,22 +113,25 @@ def main():
     ###############################################
 
     pc_fouriercs = get_pc_fouriercs_RI(sde,
-                                       predictor, corrector,
-                                       inverse_scaler,
-                                       snr=snr,
-                                       n_steps=m,
-                                       probability_flow=probability_flow,
-                                       continuous=config.training.continuous,
-                                       denoise=True, save_root=save_root, f_name =f'{fname}_{args.acc_factor}')
+                                    predictor, corrector,
+                                    inverse_scaler,
+                                    snr=snr,
+                                    n_steps=m,
+                                    probability_flow=probability_flow,
+                                    continuous=config.training.continuous,
+                                    denoise=True, save_root=save_root, f_name =f'{fname}_{args.acc_factor}')
     # fft
     kspace = fft2(img)   #reciprocal space
-
     under_kspace = kspace * mask  #multiplicative mask, 1 means present
 
     # r=torch.real(kspace).float()
     # under_kspace=torch.complex(r,torch.zeros_like(r)) #reciprocal, replace imaginary part with zeros
-
+    #under_kspace = torch.real(under_kspace) #appraoch 1
+    # signs = torch.randint(0, 2, under_kspace.shape, device=under_kspace.device) * 2 - 1
+    # signs = signs.to(under_kspace.real.dtype)
+    # under_kspace = under_kspace.real + signs*1j* under_kspace.imag #random choice between plus and minus sign between a+-ib #approach 2
     under_img = ifft2(under_kspace) #back to real space
+    #under_kspace = torch.real(under_kspace) #appraoch 1
     
     print(f'Beginning inference')
     tic = time.time()
@@ -121,32 +146,34 @@ def main():
     label = img.squeeze().cpu().detach().numpy()
     mask_sv = mask.squeeze().cpu().detach().numpy()
 
-    np.save(f'{save_root}/input/{fname}_{args.acc_factor}.npy', input)
-    np.save(f'{save_root}/input/{fname}_{args.acc_factor}_mask.npy', mask_sv)
-    np.save(str(save_root / 'label' / fname) + '.npy', label)
-    plt.imsave(f'{save_root}/label/{fname}.png',np.abs(label)*30, cmap='gray')
-    plt.imsave(f'{save_root}/input/{fname}_{args.acc_factor}.png', np.abs(input)*50, cmap='gray')
-    plt.imsave(f'{save_root}/input/{fname}_{args.acc_factor}_mask.png', np.abs(mask_sv), cmap='gray')
+    np.save(f'{save_root}/input/{fname}_sym_{i}.npy', input)
+    #np.save(f'{save_root}/input/{fname}_{args.acc_factor}_mask.npy', mask_sv)
+    np.save(f'{save_root}/label/{fname}_sym_{i}.npy', label)
+    
+    plt.imsave(f'{save_root}/label/{fname}_sym_{i}.png',np.abs(label)/label.std(), cmap='gray')
+    plt.imsave(f'{save_root}/input/{fname}_sym_{i}.png', np.abs(input)/input.std(), cmap='gray')
+    #plt.imsave(f'{save_root}/input/{fname}_{args.acc_factor}_mask.png', np.abs(mask_sv), cmap='gray')
 
     recon = x.squeeze().cpu().detach().numpy()
-    np.save(f'{save_root}/recon/{fname}_{args.acc_factor}.npy', recon)
-    plt.imsave(f'{save_root}/recon/{fname}_{args.acc_factor}.png', np.abs(recon)*30, cmap='gray')
+    np.save(f'{save_root}/recon/{fname}_{i}.npy', recon)
+    plt.imsave(f'{save_root}/recon/{fname}_{i}.png', np.abs(recon)/recon.std(), cmap='gray')
 
 
 def create_argparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=str, help='which data to use for reconstruction', required=True)
+    parser.add_argument('--data', type=str, help='which data to use for reconstruction', required=False)
     parser.add_argument('--mask_type', type=str, help='which mask to use for retrospective undersampling.'
-                                                      '(NOTE) only used for retrospective model!', default='gaussian2d',
+                                                    '(NOTE) only used for retrospective model!', default='gaussian2d',
                         choices=['gaussian1d', 'uniform1d', 'gaussian2d'])
     parser.add_argument('--acc_factor', type=int, help='Acceleration factor for Fourier undersampling.'
-                                                       '(NOTE) only used for retrospective model!', default=4)
+                                                    '(NOTE) only used for retrospective model!', default=20)
     parser.add_argument('--center_fraction', type=float, help='Fraction of ACS region to keep.'
-                                                       '(NOTE) only used for retrospective model!', default=0.08)
+                                                    '(NOTE) only used for retrospective model!', default=0.08)
     parser.add_argument('--save_dir', default='./results')
-    parser.add_argument('--N', type=int, help='Number of iterations for score-POCS sampling', default=1500)
+    parser.add_argument('--N', type=int, help='Number of iterations for score-POCS sampling', default=4000)
     parser.add_argument('--m', type=int, help='Number of corrector step per single predictor step.'
-                                              'It is advised not to change this default value.', default=1)
+                                            'It is advised not to change this default value.', default=1)
+    parser.add_argument('--slice_idx', type = int, help= 'which slice being processed.', default= 5)
     return parser
 
 

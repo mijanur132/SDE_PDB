@@ -134,3 +134,6 @@
   905  sbatch train_py310_frontier.sh 
   
   998  . start.sh 
+
+python proc_ifft.py /lustre/orion/bif151/world-shared/kbegam/n-3pol-npy-files /lustre/orion/bif151/world-shared/temp
+python proc_ifft.py /lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp /lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed

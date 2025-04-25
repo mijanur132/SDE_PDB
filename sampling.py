@@ -383,25 +383,10 @@ def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
                                           snr=snr,
                                           n_steps=n_steps)
 
-
-
-
   def data_fidelity(mask, x, x_mean, Fy):
       x = ifft2(fft2(x) * (1. - mask) + Fy) #fy is under kspace, so we keep this, and add the predicted removed part of x to create new x.
       x_mean = ifft2(fft2(x_mean) * (1. - mask) + Fy)
-      #delity:",x.dtype)
       return x, x_mean
-
-  # def data_fidelity2(mask, x, x_mean, Fy):
-  #     x_masked=fft2(x).clone()
-  #     x_masked.imag=0
-  #     x = ifft2(x_masked + Fy)
-  #     x_mean_masked=fft2(x_mean).clone()
-  #     x_mean_masked.imag=0
-  #     x_mean = ifft2(x_mean_masked + Fy)
-  #    # print("modi fidelity:",x.dtype)
-  #     return x, x_mean
-
 
   def data_fidelity2(mask, x, x_mean, Fy):
       x = ifft2(torch.real(Fy)+1j*torch.imag(fft2(x)))
@@ -417,7 +402,7 @@ def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
         x_imag = torch.imag(x)
 
         # perform update step with real / imag part seperately
-        x_real, x_real_mean = update_fn(x_real, vec_t, model=model)
+        x_real, x_real_mean = update_fn(x_real, vec_t, model=model)#predictor/corrector update fn defined above
         x_imag, x_imag_mean = update_fn(x_imag, vec_t, model=model)
 
         # merge real / imag values to form complex image
@@ -428,6 +413,51 @@ def get_pc_fouriercs_RI(sde, predictor, corrector, inverse_scaler, snr,
         return x, x_mean
 
     return fouriercs_update_fn
+
+  def data_fidelity_dnp(mask, x, x_mean, Fy): #nead to pass
+    #calculate A_q for x_real and x_img
+    #cos(psi)
+    #x = ifft2(fft2(x) * (1. - mask) + Fy) #fy is under kspace, so we keep this, and add the predicted removed part of x to create new x.
+    #x_mean = ifft2(fft2(x_mean) * (1. - mask) + Fy)
+    xr, xi = torch.real(x), torch.imag(x)
+    x_mean_r, x_mean_i = torch.real(x_mean), torch.imag(x_mean)
+    xi = torch.imag(xi * 1j + ifft(Fy - fft2(xi*1j + torch.abs(a_q) * torch.cos(psi)))) 
+    x_mean_i = torch.imag(x_mean_i * 1j + ifft(Fy - fft2(x_mean_i*1j + orch.abs(a_q) * torch.cos(psi)))) 
+    x = xr+x_i*1j
+    x_mean = x_mean_r + x_mean_i*1j
+    return x, x_mean
+
+  def get_fouriercs_update_fn_dnp(update_fn):
+    def fouriercs_update_fn(model, data, mask, x, t, Fy=None):
+      with torch.no_grad():
+        vec_t = torch.ones(data.shape[0], device=data.device) * t
+        # split real / imag part
+        #x_real = torch.real(x)
+        x_imag = torch.imag(x)
+
+        # perform update step with real / imag part seperately
+        #x_real, x_real_mean = update_fn(x_real, vec_t, model=model)#predictor/corrector update fn defined above
+        x_imag, x_imag_mean = update_fn(x_imag, vec_t, model=model)
+
+        # merge real / imag values to form complex image
+        x = x_real + 1j * x_imag
+        x_mean = x_real_mean + 1j * x_imag_mean
+        x, x_mean = data_fidelity_dnp(mask, x, x_mean, Fy)
+        return x, x_mean
+
+    return fouriercs_update_fn
+
+
+# class ReverseDiffusionPredictor(Predictor):
+#   def __init__(self, sde, score_fn, probability_flow=False):
+#     super().__init__(sde, score_fn, probability_flow)
+
+#   def update_fn(self, x, t):
+#     f, G = self.rsde.discretize(x, t)
+#     z = torch.randn_like(x)
+#     x_mean = x - f
+#     x = x_mean + G[:, None, None, None] * z
+#     return x, x_mean
 
   projector_fouriercs_update_fn = get_fouriercs_update_fn(predictor_update_fn)
   corrector_fouriercs_update_fn = get_fouriercs_update_fn(corrector_update_fn)
