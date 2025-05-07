@@ -10,13 +10,13 @@ array_in = np.load('/lustre/orion/stf218/proj-shared/brave/score-MRI/results/dnp
 array_out = np.load('/lustre/orion/stf218/proj-shared/brave/score-MRI/results/dnp/choice1/recon/1C57_honly.mtz_0_5_1.npy')
 array_sym = np.load("/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_5.npy")
 
-total_ref = np.load('/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_total.npy')
-total_inf = np.load('/lustre/orion/stf218/proj-shared/brave/score-MRI/results/dnp/choice1/combined120.npy')
 #total_phase = np.load ('/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_phase_factor_total.npy')
 total_phase_ksp = np.load('/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_phase_factor.mtz_0_sym_padded_ksp_total.npy')
 total_ref_unsym = np.load("/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed_original/1c57_honly.mtz_0_total.npy")
 #total_ref = np.load('/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_real_total.npy')
-total_inf = np.load("/lustre/orion/stf218/proj-shared/brave/score-MRI/results/dnp/vanila_4/combined120.npy")
+total_inf = np.load("/lustre/orion/stf218/proj-shared/brave/score-MRI/results/dnp/imag_mask_sym_80.0/combined120.npy")
+total_ref = np.load('/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_total.npy')
+#total_ref = total_ref_unsym
 
 centered= False
 if centered:
@@ -24,7 +24,7 @@ if centered:
 # print("ref:", total_ref)
 # print("totalinf before:",total_inf)
 
-print("mean before:", np.mean(total_inf), np.std(total_inf), np.mean(total_ref), np.std(total_ref))
+#print("mean before:", np.mean(total_inf), np.std(total_inf), np.mean(total_ref), np.std(total_ref))
 
 total_inf = np.fft.ifftn(np.fft.fft2(total_inf)) #both bef and af it has good imag value, but total_ref is real only
 # print("totalinf:",total_inf)
@@ -36,16 +36,18 @@ if np.allclose(total_ref.real, total_inf.real):
 # total_ref = total_ref/total_ref.std()
 # total_ref_unsym = total_ref_unsym/total_ref_unsym.std()
 
-plt.imsave(f'/lustre/orion/stf218/proj-shared/brave/score-MRI/total_inf.png',total_inf[10].real/total_inf[10].real.std(), cmap='gray')
-plt.imsave(f'/lustre/orion/stf218/proj-shared/brave/score-MRI/total_ref.png',total_ref[10].real/total_ref[10].real.std(), cmap='gray')
+n = 10
+
+plt.imsave(f'/lustre/orion/stf218/proj-shared/brave/score-MRI/total_inf.png',total_inf[n].real/total_inf[n].real.std(), cmap='gray')
+plt.imsave(f'/lustre/orion/stf218/proj-shared/brave/score-MRI/total_ref.png',total_ref[n].real/total_ref[n].real.std(), cmap='gray')
 #before total_ref only real, total inf complex
-r1=np.abs(total_ref)
-r2=np.abs(total_inf)
+r1=np.real(total_ref)
+r2=np.real(total_inf)
 
 x = flex.double(r1.flatten())
 y = flex.double(r2.flatten())
 
-print("means:", np.mean(x), np.mean(y), np.std(x), np.std(y))
+#print("means:", np.mean(x), np.mean(y), np.std(x), np.std(y))
 
 overall_cc = flex.linear_correlation(x = x,y = y).coefficient()
 print("overall_cc:", overall_cc)
@@ -53,15 +55,16 @@ print("overall_cc:", overall_cc)
 data_range=r1.max()-r1.min()
 # Compute SSIM between the two arrays
 ssim_index = ssim(r1, r2,data_range=data_range)
-print("SSIM_r1:", ssim_index)
+#print("SSIM_r1:", ssim_index)
 
 
 #######HARDCODED slice 5###########
 
 total_inf_ff = np.fft.ifftn(np.fft.fftn(total_inf)*total_phase_ksp)
 total_ref_ff = np.fft.ifftn(np.fft.fftn(total_ref)*total_phase_ksp)
-plt.imsave("/lustre/orion/stf218/proj-shared/brave/score-MRI/total_inf_ff.png",total_inf_ff.real[10]/total_inf_ff.real[10].std(),cmap= 'gray')
-plt.imsave("/lustre/orion/stf218/proj-shared/brave/score-MRI/total_reff_ff.png",total_ref_ff.real[10]/total_ref_ff.real[10].std(),cmap= 'gray')
+plt.imsave("/lustre/orion/stf218/proj-shared/brave/score-MRI/total_inf_ff.png",total_inf_ff.real[n]/(total_inf_ff.real[n].std()),cmap= 'gray')
+print()
+plt.imsave("/lustre/orion/stf218/proj-shared/brave/score-MRI/total_reff_ff.png",total_ref_ff.real[n]/total_ref_ff.real[n].std(),cmap= 'gray')
 r1=total_ref_ff.real
 r2=total_inf_ff.real
 x = flex.double(r1.flatten())

@@ -50,5 +50,5 @@ N_node=$SLURM_NNODES
 # srun python inference_single-coil.py --data 1IDU.pdb_1_complex_10 --mask_type 'gaussian2d' --acc_factor  50
 
 #python inference_single-coil.py --slice_idx ${SLURM_ARRAY_TASK_ID}
-srun bash -c "python inference_single-coil.py --acc_factor  4 --slice_idx \${SLURM_PROCID}"
+srun bash -c "python inference_single-coil.py --acc_factor 0.75 --slice_idx \${SLURM_PROCID}"
   

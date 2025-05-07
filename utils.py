@@ -106,7 +106,7 @@ def get_mask(img, size, batch_size, type='gaussian2d', acc_factor=8, center_frac
     mean = [size // 2, size // 2]
     cov = [[size * cov_factor, 0], [0, size * cov_factor]]
     if fix:
-      samples = np.random.multivariate_normal(mean, cov, int(Nsamp))
+      samples = np.random.multivariate_normal(mean, cov, int(Nsamp)) 
       int_samples = samples.astype(int)
       int_samples = np.clip(int_samples, 0, size - 1)
       mask[..., int_samples[:, 0], int_samples[:, 1]] = 1

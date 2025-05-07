@@ -39,7 +39,7 @@ def main():
     #filename_ref = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_total.npy'
     #filename_minus = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_minus.mtz_0_sym_5.npy'
     filename_ref = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed/1C57_honly.mtz_0_sym_total.npy'
-  
+    #filename_ref = f'/lustre/orion/stf218/proj-shared/brave/score-MRI/samples/dnp/processed_original/1c57_honly.mtz_0_total.npy'
     print('initaializing...')
     configs = importlib.import_module(f"configs.ve.fastmri_knee_320_ncsnpp_continuous")
     config = configs.get_config()
@@ -57,10 +57,6 @@ def main():
     imgx = torch.fft.ifft2(torch.fft.fftn(imgx))#complex
     #previoulsy ksp to 3d fftn to image
     #now we first reverse back to ksp and do 2d ifft2 to back to image, 
-    
-    # for i in range(len(imgx)):
-        # if i != 5:
-        #     continue
     i = slice_idx
     img = imgx[slice_idx]
     img = img.view(1, 1, 320, 320)
@@ -90,16 +86,15 @@ def main():
     ema = ExponentialMovingAverage(score_model.parameters(),
                                 decay=config.model.ema_rate)
     state = dict(step=0, model=score_model, ema=ema)
-    
     checkpt = torch.load(ckpt_filename, map_location=config.device)
-
     state['model'].load_state_dict(checkpt['model'], strict=False)
     state['ema'].load_state_dict(checkpt['ema'])
     ema.copy_to(score_model.parameters())
 
     # Specify save directory for saving generated samples
     #save_root = Path(f'./results/single-coil')
-    save_root = Path(f'./results/dnp/vanila0_{args.acc_factor}')
+    print(" args.acc_factor", args.acc_factor)
+    save_root = Path(f'./results/dnp/imag_mask_sym_{args.acc_factor}')
     #save_root = Path(f'./results/mesolite/g2d_3rd')
     save_root.mkdir(parents=True, exist_ok=True)
 
@@ -122,14 +117,14 @@ def main():
                                     denoise=True, save_root=save_root, f_name =f'{fname}_{args.acc_factor}')
     # fft
     kspace = fft2(img)   #reciprocal space
-    under_kspace = kspace * mask  #multiplicative mask, 1 means present
-
-    # r=torch.real(kspace).float()
-    # under_kspace=torch.complex(r,torch.zeros_like(r)) #reciprocal, replace imaginary part with zeros
-    #under_kspace = torch.real(under_kspace) #appraoch 1
-    # signs = torch.randint(0, 2, under_kspace.shape, device=under_kspace.device) * 2 - 1
-    # signs = signs.to(under_kspace.real.dtype)
-    # under_kspace = under_kspace.real + signs*1j* under_kspace.imag #random choice between plus and minus sign between a+-ib #approach 2
+    #under_kspace = kspace * mask  #multiplicative mask, 1 means present
+    #print("kspace before:", kspace[ 0,   0, 129, 161]) #index gives nonzero imag for slice 50
+    real = torch.real(kspace)
+    imag = torch.imag(kspace)
+    masked_imag = imag*mask 
+    under_kspace = real + 1j*masked_imag
+    #print("kspace after:", under_kspace[ 0,   0, 129, 161])
+  
     under_img = ifft2(under_kspace) #back to real space
     #under_kspace = torch.real(under_kspace) #appraoch 1
     
@@ -165,7 +160,7 @@ def create_argparser():
     parser.add_argument('--mask_type', type=str, help='which mask to use for retrospective undersampling.'
                                                     '(NOTE) only used for retrospective model!', default='gaussian2d',
                         choices=['gaussian1d', 'uniform1d', 'gaussian2d'])
-    parser.add_argument('--acc_factor', type=int, help='Acceleration factor for Fourier undersampling.'
+    parser.add_argument('--acc_factor', type=float, help='Acceleration factor for Fourier undersampling.'
                                                     '(NOTE) only used for retrospective model!', default=20)
     parser.add_argument('--center_fraction', type=float, help='Fraction of ACS region to keep.'
                                                     '(NOTE) only used for retrospective model!', default=0.08)
