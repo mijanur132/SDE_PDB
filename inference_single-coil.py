@@ -16,6 +16,62 @@ import importlib
 import argparse
 import sys
 
+def rgb2bit(image, b_type, b_scale, perm=None, gray_codes=None):
+    
+    if images.dtype != torch.uint8:
+            raise ValueError("images must be uint8 dtype")
+
+        if b_type == 'gray':
+            if gray_codes is None:
+                raise ValueError("gray_codes is required for b_type='gray'")
+            images = gray_codes[images]
+        elif b_type != 'uint8':
+            raise ValueError(f"Unsupported b_type: {b_type}")
+
+        B, H, W, C = images.shape
+        bits = ((images.unsqueeze(-1) >> torch.arange(7, -1, -1)) & 1).float()  # [B,H,W,3,8]
+        bits = bits.view(B, H, W, -1)  # [B,H,W,24]
+        bits = (bits * 2 - 1) * b_scale
+
+        return bits
+
+def bit2rgb_torch(bits, b_type, b_scale=1.0, gray_inv_codes=None):
+    """
+    Convert bitwise encoded tensor back to RGB image (uint8).
+
+    Args:
+        bits (Tensor): [B, H, W, 24] in [-b_scale, +b_scale]
+        b_type (str): 'uint8' or 'gray'
+        b_scale (float): must match what was used in rgb2bit
+        gray_inv_codes (Tensor): required if b_type == 'gray', shape [256]
+
+    Returns:
+        Tensor: [B, H, W, 3], dtype uint8
+    """
+    if bits.shape[-1] != 24:
+        raise ValueError("Expected 24 channels (8 bits per RGB channel)")
+
+    # Unscale and threshold bits → binary
+    bits = (bits / b_scale).clamp(-1, 1)
+    bits = ((bits + 1) / 2 > 0.5).to(torch.uint8)  # [B, H, W, 24]
+
+    # Reshape to 3 × 8
+    bits = bits.view(*bits.shape[:-1], 3, 8)  # [B, H, W, 3, 8]
+
+    # Convert 8 bits → int
+    powers = (1 << torch.arange(7, -1, -1, device=bits.device)).to(torch.uint8)
+    ints = torch.sum(bits * powers, dim=-1)  # [B, H, W, 3]
+
+    if b_type == 'gray':
+        if gray_inv_codes is None:
+            raise ValueError("gray_inv_codes required for b_type='gray'")
+        ints = gray_inv_codes[ints]  # reverse Gray code
+
+    elif b_type != 'uint8':
+        raise ValueError(f"Unsupported b_type: {b_type}")
+
+    return ints  # dtype: uint8, shape [B, H, W, 3]
+
 
 def main():
     ###############################################
